@@ -8,14 +8,9 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 
-#bg-canvas {
-  position:fixed; inset:0; z-index:0;
-}
-#three-canvas {
-  position:fixed; inset:0; z-index:1;
-  pointer-events:none;
-}
-/* grain overlay */
+#bg-canvas { position:fixed; inset:0; z-index:0; }
+#three-canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
+
 #grain {
   position:fixed; inset:-50%; width:200%; height:200%;
   pointer-events:none; z-index:20; opacity:0.025;
@@ -24,10 +19,8 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
   background-size:256px 256px;
 }
 @keyframes grainShift {
-  0%  { transform:translate(0,0); }
-  20% { transform:translate(-3%,-4%); }
-  40% { transform:translate(4%,2%); }
-  60% { transform:translate(-2%,5%); }
+  0%  { transform:translate(0,0); }   20% { transform:translate(-3%,-4%); }
+  40% { transform:translate(4%,2%); } 60% { transform:translate(-2%,5%); }
   80% { transform:translate(5%,-2%); }
 }
 
@@ -42,8 +35,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 #next {
   position:fixed; bottom:2rem; right:2.2rem; z-index:100;
   width:48px; height:48px; display:flex; align-items:center; justify-content:center;
-  border:none; background:none; cursor:pointer;
-  opacity:0; transition:opacity 1.2s ease;
+  border:none; background:none; cursor:pointer; opacity:0; transition:opacity 1.2s ease;
 }
 #next.visible { opacity:1; }
 #next svg { width:28px; height:28px; stroke:rgba(180,210,150,0.4); fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s,transform .3s; }
@@ -51,20 +43,16 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 
 #mute {
   position:fixed; bottom:2rem; left:2rem; z-index:100;
-  background:none; border:none; cursor:pointer;
-  opacity:0; transition:opacity 1.2s ease; padding:4px;
+  background:none; border:none; cursor:pointer; opacity:0; transition:opacity 1.2s ease; padding:4px;
 }
 #mute.visible { opacity:1; }
 #mute svg { width:20px; height:20px; stroke:rgba(180,210,150,0.3); fill:none; stroke-width:1.4; stroke-linecap:round; transition:stroke .3s; }
 #mute:hover svg { stroke:rgba(200,230,170,0.7); }
 
 #loading {
-  position:fixed; inset:0; z-index:200;
-  display:flex; align-items:center; justify-content:center;
-  background:#0a110a;
-  font-family:'Georgia',serif; font-size:0.72rem; letter-spacing:0.22em;
-  color:rgba(160,200,130,0.35); text-transform:uppercase;
-  transition:opacity 1.6s ease;
+  position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
+  background:#0a110a; font-family:'Georgia',serif; font-size:0.72rem; letter-spacing:0.22em;
+  color:rgba(160,200,130,0.35); text-transform:uppercase; transition:opacity 1.6s ease;
 }
 #loading.fade { opacity:0; pointer-events:none; }
 </style>
@@ -75,7 +63,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 <canvas id="bg-canvas"></canvas>
 <canvas id="three-canvas"></canvas>
 <div id="grain"></div>
-
 <div id="label">01 — clearing</div>
 
 <button id="mute" aria-label="Toggle sound">
@@ -85,7 +72,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
     <path id="wave2" d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
   </svg>
 </button>
-
 <button id="next" aria-label="Next room">
   <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
 </button>
@@ -93,481 +79,320 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
-
 <script>
-// ============================================================
-// SETUP
-// ============================================================
+// ── CANVAS SETUP ─────────────────────────────────────────────
 let W = window.innerWidth, H = window.innerHeight;
-
 const bgCanvas = document.getElementById('bg-canvas');
 const bgCtx    = bgCanvas.getContext('2d');
 
-function resizeCanvases() {
+function resize() {
   W = window.innerWidth; H = window.innerHeight;
   bgCanvas.width = W; bgCanvas.height = H;
-}
-resizeCanvases();
-window.addEventListener('resize', () => {
-  resizeCanvases();
   camera.aspect = W/H; camera.updateProjectionMatrix();
-  renderer.setSize(W,H);
-});
+  renderer.setSize(W, H);
+}
+bgCanvas.width = W; bgCanvas.height = H;
+window.addEventListener('resize', resize);
 
-// ============================================================
-// WIND
-// ============================================================
+// ── WIND ─────────────────────────────────────────────────────
 let windTime=0, windStrength=0, windTarget=0, windGust=0;
-
 function tickWind(dt) {
   windTime += dt*0.35;
-  if (Math.random()<0.007) windTarget = (Math.random()-0.35)*1.2;
+  if (Math.random()<0.007) windTarget=(Math.random()-0.35)*1.1;
   windStrength += (windTarget-windStrength)*0.01;
-  if (Math.random()<0.003) windGust = (Math.random()*0.7+0.2)*Math.sign(windStrength||1);
+  if (Math.random()<0.003) windGust=(Math.random()*0.6+0.2)*Math.sign(windStrength||1);
   windGust *= 0.975;
 }
 
-// ============================================================
-// BG — sky, ground, backlit glow, depth layers, fog
-// ============================================================
+// ── BG CANVAS — sky, ground, glow, mid trees, fog, vignette ──
 function drawBG(t) {
   bgCtx.clearRect(0,0,W,H);
 
-  // ---- SKY — overcast, cool, slightly luminous in centre ----
-  const sky = bgCtx.createLinearGradient(0,0,0,H*0.52);
-  sky.addColorStop(0,   '#8ea882');   // muted grey-green canopy zone
-  sky.addColorStop(0.35,'#adc49a');   // lighter mid
-  sky.addColorStop(0.7, '#c8d8b4');   // bright diffuse light through gap
-  sky.addColorStop(1,   '#b8cfa0');
-  bgCtx.fillStyle = sky;
-  bgCtx.fillRect(0,0,W,H*0.52);
+  // Sky — overcast cool green
+  const sky = bgCtx.createLinearGradient(0,0,0,H*0.54);
+  sky.addColorStop(0,   '#6a8a62');
+  sky.addColorStop(0.4, '#9ab88a');
+  sky.addColorStop(0.75,'#c2d8a8');
+  sky.addColorStop(1,   '#b0cc96');
+  bgCtx.fillStyle=sky; bgCtx.fillRect(0,0,W,H*0.54);
 
-  // Backlit glow in clearing centre — the key light of the scene
-  const glowY = H*0.44;
-  const glow = bgCtx.createRadialGradient(W/2, glowY, 0, W/2, glowY, W*0.28);
-  glow.addColorStop(0,   'rgba(220,240,195,0.62)');
-  glow.addColorStop(0.4, 'rgba(185,215,155,0.28)');
-  glow.addColorStop(1,   'rgba(140,180,110,0)');
-  bgCtx.fillStyle = glow;
-  bgCtx.fillRect(0,0,W,H*0.52);
+  // Backlit glow in clearing centre
+  const gY=H*0.42;
+  const glow=bgCtx.createRadialGradient(W/2,gY,0, W/2,gY,W*0.22);
+  glow.addColorStop(0,  'rgba(215,240,190,0.7)');
+  glow.addColorStop(0.4,'rgba(180,215,148,0.32)');
+  glow.addColorStop(1,  'rgba(130,175,100,0)');
+  bgCtx.fillStyle=glow; bgCtx.fillRect(0,0,W,H*0.54);
 
-  // ---- GROUND — flat, dark, mossy ----
-  const grd = bgCtx.createLinearGradient(0, H*0.5, 0, H);
-  grd.addColorStop(0,   '#1c2a18');
-  grd.addColorStop(0.18,'#182415');
-  grd.addColorStop(0.5, '#111b0f');
-  grd.addColorStop(1,   '#090e08');
-  bgCtx.fillStyle = grd;
-  bgCtx.fillRect(0, H*0.5, W, H*0.5);
+  // Ground — dark mossy floor
+  const grd=bgCtx.createLinearGradient(0,H*0.5,0,H);
+  grd.addColorStop(0,  '#1a2a14');
+  grd.addColorStop(0.2,'#151f10');
+  grd.addColorStop(1,  '#080c07');
+  bgCtx.fillStyle=grd; bgCtx.fillRect(0,H*0.5,W,H*0.5);
 
-  // Clearing floor slightly lit — light pools in centre
-  const floorGlow = bgCtx.createRadialGradient(W/2, H*0.6, 0, W/2, H*0.68, W*0.22);
-  floorGlow.addColorStop(0,   'rgba(80,110,55,0.38)');
-  floorGlow.addColorStop(0.5, 'rgba(50,75,35,0.18)');
-  floorGlow.addColorStop(1,   'rgba(20,35,14,0)');
-  bgCtx.fillStyle = floorGlow;
-  bgCtx.fillRect(0, H*0.5, W, H*0.5);
+  // Lit pool on clearing floor
+  const fl=bgCtx.createRadialGradient(W/2,H*0.62,0, W/2,H*0.68,W*0.18);
+  fl.addColorStop(0,  'rgba(72,105,48,0.42)');
+  fl.addColorStop(0.5,'rgba(45,72,30,0.18)');
+  fl.addColorStop(1,  'rgba(15,28,10,0)');
+  bgCtx.fillStyle=fl; bgCtx.fillRect(0,H*0.5,W,H*0.5);
 
-  // ---- DEPTH LAYERS — mid-distance tree masses ----
-  // These are painted 2D tree silhouettes in middle distance
-  // so the 3D GLB trees frame them from the front
+  // Mid-distance painted trees (visible through the gap)
   drawMidTrees(t);
 
-  // ---- FOG / atmospheric haze ----
-  // Low mist sitting just above ground
-  for (let i=0; i<4; i++) {
-    const ph = i*1.7 + t*0.03;
-    const cx = W*0.5 + Math.sin(ph)*W*0.18 + i*W*0.12 - W*0.18;
-    const ry = H*0.045;
-    const rx = W*(0.18+0.08*Math.sin(ph*0.5));
-    const cy = H*(0.58 + 0.04*Math.sin(ph*0.6));
-    const fog = bgCtx.createRadialGradient(cx,cy,0, cx,cy,Math.max(rx,ry));
-    fog.addColorStop(0,   'rgba(175,210,150,0.055)');
-    fog.addColorStop(0.6, 'rgba(155,195,130,0.022)');
-    fog.addColorStop(1,   'transparent');
-    bgCtx.save();
-    bgCtx.scale(1, ry/rx);
-    bgCtx.beginPath();
-    bgCtx.arc(cx, cy*(rx/ry), rx, 0, Math.PI*2);
-    bgCtx.fillStyle = fog;
-    bgCtx.fill();
-    bgCtx.restore();
+  // Low fog
+  for (let i=0;i<4;i++) {
+    const ph=i*1.7+t*0.025;
+    const cx=W*0.5+Math.sin(ph)*W*0.15+(i-1.5)*W*0.14;
+    const cy=H*(0.57+0.03*Math.sin(ph*0.6));
+    const rx=W*(0.16+0.07*Math.sin(ph*0.5));
+    const ry=H*0.04;
+    const fog=bgCtx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry));
+    fog.addColorStop(0,  'rgba(170,210,140,0.05)');
+    fog.addColorStop(0.6,'rgba(150,195,120,0.02)');
+    fog.addColorStop(1,  'transparent');
+    bgCtx.save(); bgCtx.scale(1,ry/rx);
+    bgCtx.beginPath(); bgCtx.arc(cx,cy*(rx/ry),rx,0,Math.PI*2);
+    bgCtx.fillStyle=fog; bgCtx.fill(); bgCtx.restore();
   }
 
-  // ---- VIGNETTE — heavy on sides, lighter top/bottom ----
-  // Left edge darkness (behind left foreground tree)
-  const vL = bgCtx.createLinearGradient(0,0,W*0.28,0);
-  vL.addColorStop(0,   'rgba(5,10,4,0.88)');
-  vL.addColorStop(0.5, 'rgba(5,10,4,0.35)');
-  vL.addColorStop(1,   'rgba(5,10,4,0)');
-  bgCtx.fillStyle = vL;
-  bgCtx.fillRect(0,0,W*0.28,H);
+  // Vignette — sides, top, bottom
+  const vL=bgCtx.createLinearGradient(0,0,W*0.32,0);
+  vL.addColorStop(0,'rgba(4,8,3,0.92)'); vL.addColorStop(1,'rgba(4,8,3,0)');
+  bgCtx.fillStyle=vL; bgCtx.fillRect(0,0,W*0.32,H);
 
-  // Right edge
-  const vR = bgCtx.createLinearGradient(W,0,W*0.72,0);
-  vR.addColorStop(0,   'rgba(5,10,4,0.88)');
-  vR.addColorStop(0.5, 'rgba(5,10,4,0.35)');
-  vR.addColorStop(1,   'rgba(5,10,4,0)');
-  bgCtx.fillStyle = vR;
-  bgCtx.fillRect(W*0.72,0,W*0.28,H);
+  const vR=bgCtx.createLinearGradient(W,0,W*0.68,0);
+  vR.addColorStop(0,'rgba(4,8,3,0.92)'); vR.addColorStop(1,'rgba(4,8,3,0)');
+  bgCtx.fillStyle=vR; bgCtx.fillRect(W*0.68,0,W*0.32,H);
 
-  // Top — canopy darkness
-  const vT = bgCtx.createLinearGradient(0,0,0,H*0.22);
-  vT.addColorStop(0,   'rgba(4,8,3,0.75)');
-  vT.addColorStop(1,   'rgba(4,8,3,0)');
-  bgCtx.fillStyle = vT;
-  bgCtx.fillRect(0,0,W,H*0.22);
+  const vT=bgCtx.createLinearGradient(0,0,0,H*0.18);
+  vT.addColorStop(0,'rgba(3,7,2,0.8)'); vT.addColorStop(1,'rgba(3,7,2,0)');
+  bgCtx.fillStyle=vT; bgCtx.fillRect(0,0,W,H*0.18);
 
-  // Bottom
-  const vB = bgCtx.createLinearGradient(0,H,0,H*0.78);
-  vB.addColorStop(0,   'rgba(4,8,3,0.65)');
-  vB.addColorStop(1,   'rgba(4,8,3,0)');
-  bgCtx.fillStyle = vB;
-  bgCtx.fillRect(0,H*0.78,W,H*0.22);
+  const vB=bgCtx.createLinearGradient(0,H,0,H*0.8);
+  vB.addColorStop(0,'rgba(3,6,2,0.7)'); vB.addColorStop(1,'rgba(3,6,2,0)');
+  bgCtx.fillStyle=vB; bgCtx.fillRect(0,H*0.8,W,H*0.2);
 }
 
-// ---- Mid-distance 2D painted trees ----
-// These read as the lighter trees visible through the gap in the photo
+// Mid-distance 2D trees — visible in the gap between GLB trees
 function drawMidTrees(t) {
-  const horizon = H*0.5;
-  const midTrees = [
-    // cx, baseY, height, trunkW, canopyR, phase
-    { cx:W*0.38, h:H*0.28, tw:3,  cr:W*0.04, ph:0.3  },
-    { cx:W*0.42, h:H*0.32, tw:2,  cr:W*0.03, ph:1.1  },
-    { cx:W*0.48, h:H*0.38, tw:2.5,cr:W*0.035,ph:2.0  },
-    { cx:W*0.53, h:H*0.30, tw:2,  cr:W*0.032,ph:0.8  },
-    { cx:W*0.58, h:H*0.26, tw:3,  cr:W*0.038,ph:1.6  },
-    { cx:W*0.62, h:H*0.34, tw:2.5,cr:W*0.03, ph:2.4  },
-    { cx:W*0.33, h:H*0.22, tw:2,  cr:W*0.028,ph:0.5  },
-    { cx:W*0.67, h:H*0.24, tw:2,  cr:W*0.026,ph:1.8  },
-    // Tall thin conifers in background
-    { cx:W*0.44, h:H*0.42, tw:1.5,cr:W*0.018,ph:0.9, conifer:true },
-    { cx:W*0.55, h:H*0.4,  tw:1.5,cr:W*0.016,ph:2.1, conifer:true },
-    { cx:W*0.50, h:H*0.44, tw:1.5,cr:W*0.015,ph:1.4, conifer:true },
+  const hz=H*0.52;
+  const w=windStrength+windGust;
+
+  const trees=[
+    {cx:W*0.38,h:H*0.30,cr:W*0.038,tw:3, ph:0.4},
+    {cx:W*0.44,h:H*0.36,cr:W*0.030,tw:2, ph:1.2},
+    {cx:W*0.50,h:H*0.40,cr:W*0.028,tw:2, ph:2.0, conifer:true},
+    {cx:W*0.55,h:H*0.33,cr:W*0.032,tw:2, ph:0.8},
+    {cx:W*0.62,h:H*0.28,cr:W*0.036,tw:3, ph:1.8},
+    {cx:W*0.34,h:H*0.24,cr:W*0.024,tw:2, ph:2.6, conifer:true},
+    {cx:W*0.66,h:H*0.26,cr:W*0.022,tw:2, ph:3.2, conifer:true},
   ];
 
-  midTrees.forEach(tr => {
-    const baseY = horizon;
-    const wind  = (windStrength+windGust);
-    const sway  = Math.sin(windTime*1.0+tr.ph)*wind*0.012;
-
-    bgCtx.save();
-    bgCtx.globalAlpha = 0.82;
+  trees.forEach(tr=>{
+    const sway=Math.sin(windTime*1.0+tr.ph)*w*0.013;
+    bgCtx.save(); bgCtx.globalAlpha=0.78;
 
     if (tr.conifer) {
-      // Tall thin conifer — spire shape
-      const col = bgCtx.createLinearGradient(tr.cx-tr.cr,baseY-tr.h, tr.cx+tr.cr, baseY);
-      col.addColorStop(0, 'rgba(90,125,70,0.55)');
-      col.addColorStop(1, 'rgba(55,80,42,0.4)');
-      bgCtx.fillStyle = col;
+      const col=bgCtx.createLinearGradient(tr.cx,hz-tr.h,tr.cx,hz);
+      col.addColorStop(0,'rgba(75,110,58,0.5)');
+      col.addColorStop(1,'rgba(45,70,35,0.35)');
+      bgCtx.fillStyle=col;
       bgCtx.beginPath();
-      bgCtx.moveTo(tr.cx + sway*tr.h, baseY - tr.h);
-      bgCtx.lineTo(tr.cx + sway*tr.h*0.5 + tr.cr*0.9, baseY - tr.h*0.55);
-      bgCtx.lineTo(tr.cx + sway*tr.h*0.3 + tr.cr*1.4, baseY - tr.h*0.25);
-      bgCtx.lineTo(tr.cx + tr.tw*0.6, baseY);
-      bgCtx.lineTo(tr.cx - tr.tw*0.6, baseY);
-      bgCtx.lineTo(tr.cx - sway*tr.h*0.3 - tr.cr*1.4, baseY - tr.h*0.25);
-      bgCtx.lineTo(tr.cx - sway*tr.h*0.5 - tr.cr*0.9, baseY - tr.h*0.55);
-      bgCtx.closePath();
-      bgCtx.fill();
+      bgCtx.moveTo(tr.cx+sway*tr.h, hz-tr.h);
+      bgCtx.lineTo(tr.cx+sway*tr.h*0.5+tr.cr*0.8, hz-tr.h*0.5);
+      bgCtx.lineTo(tr.cx+sway*tr.h*0.3+tr.cr*1.3, hz-tr.h*0.22);
+      bgCtx.lineTo(tr.cx+tr.tw*0.5, hz);
+      bgCtx.lineTo(tr.cx-tr.tw*0.5, hz);
+      bgCtx.lineTo(tr.cx-sway*tr.h*0.3-tr.cr*1.3, hz-tr.h*0.22);
+      bgCtx.lineTo(tr.cx-sway*tr.h*0.5-tr.cr*0.8, hz-tr.h*0.5);
+      bgCtx.closePath(); bgCtx.fill();
     } else {
-      // Deciduous — rounded canopy, lit from behind/above
-      const topX = tr.cx + sway*tr.h;
-      const topY = baseY - tr.h;
-
-      // Trunk
-      bgCtx.fillStyle = 'rgba(30,42,24,0.7)';
+      const tx=tr.cx+sway*tr.h, ty=hz-tr.h;
+      bgCtx.fillStyle='rgba(28,40,22,0.65)';
       bgCtx.beginPath();
-      bgCtx.moveTo(tr.cx - tr.tw*0.5, baseY);
-      bgCtx.quadraticCurveTo(tr.cx + sway*tr.h*0.4, baseY-tr.h*0.5, topX, topY+tr.cr*0.6);
-      bgCtx.lineTo(topX + tr.tw*0.6, topY+tr.cr*0.6);
-      bgCtx.quadraticCurveTo(tr.cx + sway*tr.h*0.4 + tr.tw, baseY-tr.h*0.5, tr.cx+tr.tw*0.5, baseY);
-      bgCtx.closePath();
-      bgCtx.fill();
-
-      // Canopy — backlit so bright fringe, dark centre
-      const cg = bgCtx.createRadialGradient(
-        topX - tr.cr*0.2, topY - tr.cr*0.2, 0,
-        topX, topY, tr.cr
-      );
-      cg.addColorStop(0,   'rgba(100,145,75,0.5)');
-      cg.addColorStop(0.5, 'rgba(80,118,58,0.55)');
-      cg.addColorStop(0.8, 'rgba(60,90,44,0.45)');
-      cg.addColorStop(1,   'rgba(165,210,130,0.15)'); // light fringe
-      bgCtx.fillStyle = cg;
+      bgCtx.moveTo(tr.cx-tr.tw*0.5, hz);
+      bgCtx.quadraticCurveTo(tr.cx+sway*tr.h*0.4, hz-tr.h*0.5, tx, ty+tr.cr*0.5);
+      bgCtx.lineTo(tx+tr.tw*0.5, ty+tr.cr*0.5);
+      bgCtx.quadraticCurveTo(tr.cx+sway*tr.h*0.4+tr.tw, hz-tr.h*0.5, tr.cx+tr.tw*0.5, hz);
+      bgCtx.closePath(); bgCtx.fill();
+      const cg=bgCtx.createRadialGradient(tx,ty,0,tx,ty,tr.cr);
+      cg.addColorStop(0,  'rgba(88,128,65,0.52)');
+      cg.addColorStop(0.7,'rgba(55,88,40,0.45)');
+      cg.addColorStop(1,  'rgba(155,205,120,0.12)');
+      bgCtx.fillStyle=cg;
       bgCtx.beginPath();
-      for (let a=0; a<Math.PI*2; a+=0.2) {
-        const r = tr.cr*(0.82 + 0.2*Math.sin(a*3.3+tr.ph));
-        const px = topX + Math.cos(a)*r;
-        const py = topY + Math.sin(a)*r*0.82;
-        a===0 ? bgCtx.moveTo(px,py) : bgCtx.lineTo(px,py);
+      for(let a=0;a<Math.PI*2;a+=0.2){
+        const r=tr.cr*(0.82+0.2*Math.sin(a*3.3+tr.ph));
+        const px=tx+Math.cos(a)*r, py=ty+Math.sin(a)*r*0.8;
+        a===0?bgCtx.moveTo(px,py):bgCtx.lineTo(px,py);
       }
-      bgCtx.closePath();
-      bgCtx.fill();
+      bgCtx.closePath(); bgCtx.fill();
     }
-
     bgCtx.restore();
   });
 }
 
-// ============================================================
-// THREE.JS
-// ============================================================
+// ── THREE.JS ─────────────────────────────────────────────────
 const threeCanvas = document.getElementById('three-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas:threeCanvas, alpha:true, antialias:true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const renderer = new THREE.WebGLRenderer({canvas:threeCanvas, alpha:true, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(W,H);
 renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.setClearColor(0x000000, 0);
+renderer.setClearColor(0,0);
 
 const scene = new THREE.Scene();
 
-// Camera — slightly low, looking slightly up into the canopy
-const camera = new THREE.PerspectiveCamera(48, W/H, 0.1, 500);
-camera.position.set(0, 1.8, 14);
-camera.lookAt(0, 3.5, 0);
+// Camera pulled WAY back so trees are actually smaller and scene reads correctly
+const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 500);
+camera.position.set(0, 2.5, 32);
+camera.lookAt(0, 5, 0);
 
-// Lighting matches the photo:
-// Soft diffuse overcast from above/behind, no hard sun
-const skyLight = new THREE.HemisphereLight(
-  0xa8c888,  // sky — cool green-white
-  0x1a2a12,  // ground bounce — dark
-  1.4
-);
-scene.add(skyLight);
+// Overcast lighting — no hard directional sun
+scene.add(new THREE.HemisphereLight(0xa0c882, 0x18280e, 1.5));
+const back = new THREE.DirectionalLight(0xc0dca0, 0.7);
+back.position.set(0, 10, -15); scene.add(back);
+const fill = new THREE.DirectionalLight(0x608848, 0.18);
+fill.position.set(0, 3, 32); scene.add(fill);
 
-// Subtle backlight from centre — the glow in the gap
-const backLight = new THREE.DirectionalLight(0xc8e0a8, 0.9);
-backLight.position.set(0, 8, -10);
-scene.add(backLight);
-
-// Very faint front fill so trunks aren't pure black
-const fillLight = new THREE.DirectionalLight(0x6a8855, 0.22);
-fillLight.position.set(0, 4, 14);
-scene.add(fillLight);
-
-// Wind shader — vertex displacement
-const WIND_VERT = `
-  float wPhase = uWindTime * 1.05 + position.x * 0.25 + uPhase;
-  float ws = sin(wPhase) * uWind + sin(uWindTime*0.68 + uPhase*1.3) * uWind * 0.38;
-  float hf = clamp(transformed.y / uH, 0.0, 1.0);
-  hf = hf * hf;
-  transformed.x += ws * hf * 0.28;
-  transformed.z += ws * hf * 0.09;
+// Wind vertex shader patch
+const WIND = `
+  float wp = uT*1.05 + position.x*0.25 + uPh;
+  float ws = sin(wp)*uW + sin(uT*0.68+uPh*1.3)*uW*0.38;
+  float hf = clamp(transformed.y/uH,0.0,1.0); hf*=hf;
+  transformed.x += ws*hf*0.3;
+  transformed.z += ws*hf*0.1;
 `;
-
-const allWindUs = [];
-
-function patchWind(mat, phase, treeH) {
-  const u = {
-    uWindTime: {value:0}, uWind: {value:0},
-    uPhase: {value:phase}, uH: {value:treeH}
+const allU=[];
+function patchWind(mat, ph, h) {
+  const u={uT:{value:0},uW:{value:0},uPh:{value:ph},uH:{value:h}};
+  mat.onBeforeCompile=sh=>{
+    Object.assign(sh.uniforms,u);
+    sh.vertexShader=`uniform float uT,uW,uPh,uH;\n`+sh.vertexShader;
+    sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n'+WIND);
   };
-  mat.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, u);
-    sh.vertexShader = `uniform float uWindTime,uWind,uPhase,uH;\n` + sh.vertexShader;
-    sh.vertexShader = sh.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\n' + WIND_VERT
-    );
-    mat._su = u;
-  };
-  mat._u = u;
-  mat.needsUpdate = true;
-  allWindUs.push(u);
-  return u;
+  mat.needsUpdate=true; allU.push(u); return u;
 }
+function updateWind(t){const w=windStrength+windGust; allU.forEach(u=>{u.uT.value=t;u.uW.value=w;});}
 
-function updateWind(t) {
-  const w = windStrength + windGust;
-  allWindUs.forEach(u => { u.uWindTime.value=t; u.uWind.value=w; });
-}
-
-// Load GLB
+// Load and place trees
 const loader = new THREE.GLTFLoader();
-loader.load('tree.glb', gltf => {
+loader.load('tree.glb', gltf=>{
   placeTrees(gltf.scene);
   fadeIn();
-}, null, err => { console.error(err); fadeIn(); });
+}, null, err=>{ console.error(err); fadeIn(); });
 
 function placeTrees(tmpl) {
-  // Camera FOV half-width at Z=0: tan(24°)*14 ≈ 6.2
-  const halfW = Math.tan((48/2)*Math.PI/180) * 14;
+  // At Z=32, camera FOV 55°: half-width ≈ tan(27.5°)*32 ≈ 16.6
+  // We want trees flanking a clearing in the middle third
+  // Just 6 trees total — 2 close foreground, 2 mid, 1-2 background closing the gap
 
-  // --- TWO DOMINANT FOREGROUND TREES — close to edges, large ---
-  // Left tree
-  placeTree(tmpl, {
-    x: -halfW * 0.72,  // close to left edge
-    y: 0, z: 6,        // close to camera
-    sx: 1.55, sy: 1.7, sz: 1.55,
-    ry: 0.3,
-    phase: 0.4,
-    darken: 0.18,       // nearly silhouette
-  });
+  const trees = [
+    // LEFT foreground — close, tall, frames the left side
+    { x:-10,  z: 8,  sx:1.8, sy:2.2, ry: 0.2, ph:0.5, dk:0.12 },
+    // RIGHT foreground — close, tall, frames the right side
+    { x: 10,  z: 8,  sx:1.7, sy:2.1, ry:-0.3, ph:1.6, dk:0.12 },
+    // LEFT mid
+    { x:-7,   z: 0,  sx:1.2, sy:1.5, ry: 0.6, ph:2.2, dk:0.28 },
+    // RIGHT mid
+    { x: 7,   z: 0,  sx:1.1, sy:1.45,ry:-0.8, ph:0.9, dk:0.28 },
+    // Background centre-left — closes the gap partially
+    { x:-3.5, z:-10, sx:0.85,sy:1.1, ry: 1.2, ph:3.1, dk:0.48 },
+    // Background centre-right
+    { x: 3.5, z:-10, sx:0.8, sy:1.05,ry:-1.4, ph:2.5, dk:0.48 },
+  ];
 
-  // Right tree
-  placeTree(tmpl, {
-    x: halfW * 0.72,
-    y: 0, z: 6,
-    sx: 1.45, sy: 1.65, sz: 1.45,
-    ry: -0.5,
-    phase: 1.8,
-    darken: 0.18,
-  });
-
-  // --- SECONDARY FOREGROUND TREES — slightly behind, smaller ---
-  placeTree(tmpl, {
-    x: -halfW * 0.52,
-    y: 0, z: 2,
-    sx: 1.1, sy: 1.3, sz: 1.1,
-    ry: 0.9, phase: 2.2, darken: 0.22,
-  });
-  placeTree(tmpl, {
-    x: halfW * 0.5,
-    y: 0, z: 2,
-    sx: 1.0, sy: 1.25, sz: 1.0,
-    ry: -1.1, phase: 0.7, darken: 0.22,
-  });
-
-  // --- MID-DEPTH TREES — further back, flanking clearing ---
-  [
-    { x:-halfW*0.35, z:-4, sx:0.75, sy:0.9,  ry:1.4,  ph:1.2, dk:0.35 },
-    { x: halfW*0.35, z:-4, sx:0.7,  sy:0.85, ry:-1.6, ph:2.8, dk:0.35 },
-    { x:-halfW*0.55, z:-2, sx:0.9,  sy:1.0,  ry:0.6,  ph:3.5, dk:0.28 },
-    { x: halfW*0.55, z:-2, sx:0.85, sy:0.95, ry:-0.8, ph:1.9, dk:0.28 },
-    { x:-halfW*0.2,  z:-7, sx:0.55, sy:0.7,  ry:2.1,  ph:0.3, dk:0.5  },
-    { x: halfW*0.2,  z:-7, sx:0.5,  sy:0.65, ry:-2.3, ph:2.5, dk:0.5  },
-    { x:-halfW*0.7,  z: 0, sx:0.85, sy:1.1,  ry:0.2,  ph:3.1, dk:0.2  },
-    { x: halfW*0.7,  z: 0, sx:0.8,  sy:1.05, ry:-0.4, ph:1.5, dk:0.2  },
-  ].forEach(p => {
-    placeTree(tmpl, {
-      x:p.x, y:0, z:p.z,
-      sx:p.sx, sy:p.sy, sz:p.sx,
-      ry:p.ry, phase:p.ph, darken:p.dk,
+  trees.forEach(p=>{
+    const clone=tmpl.clone(true);
+    clone.scale.set(p.sx, p.sy, p.sx);
+    clone.rotation.y=p.ry;
+    clone.position.set(p.x, 0, p.z);
+    const h=5*p.sy;
+    clone.traverse(child=>{
+      if(!child.isMesh) return;
+      child.material=child.material.clone();
+      child.material.color=(child.material.color||new THREE.Color(1,1,1)).multiplyScalar(p.dk);
+      if(child.material.name==='leaves'){
+        child.material.alphaTest=0.45;
+        child.material.transparent=true;
+        child.material.side=THREE.DoubleSide;
+      }
+      patchWind(child.material, p.ph, h);
     });
+    scene.add(clone);
   });
 }
 
-function placeTree(tmpl, opts) {
-  const clone = tmpl.clone(true);
-  clone.scale.set(opts.sx, opts.sy, opts.sz);
-  clone.rotation.y = opts.ry;
-  clone.position.set(opts.x, opts.y, opts.z);
-
-  const treeH = 5 * opts.sy;
-  const phase = opts.phase;
-  const dk    = opts.darken;
-
-  clone.traverse(child => {
-    if (!child.isMesh) return;
-    child.material = child.material.clone();
-
-    // Darken toward silhouette — foreground trees nearly black
-    if (!child.material.color) child.material.color = new THREE.Color(1,1,1);
-    child.material.color.multiplyScalar(dk);
-
-    // Leaves
-    if (child.material.name === 'leaves') {
-      child.material.alphaTest = 0.45;
-      child.material.transparent = true;
-      child.material.side = THREE.DoubleSide;
-    }
-
-    patchWind(child.material, phase, treeH);
-  });
-
-  scene.add(clone);
-}
-
-// ============================================================
-// AUDIO
-// ============================================================
-let audioOn=false, isMuted=false, masterGain, rustleEnv;
-
-async function startAudio() {
-  if (audioOn) return; audioOn=true;
-  await Tone.start();
-  masterGain = new Tone.Gain(0.65).toDestination();
-
-  // Wind
-  const wn = new Tone.Noise('pink');
-  const wf = new Tone.Filter(300,'bandpass'); wf.Q.value=0.5;
-  const wg = new Tone.Gain(0).connect(masterGain);
-  wn.connect(wf); wf.connect(wg); wn.start();
-  const lfo = new Tone.LFO({frequency:0.06,min:0,max:0.16}).connect(wg.gain); lfo.start();
-
-  // Birds
-  (function chirp() {
-    if (isMuted) { setTimeout(chirp,3000+Math.random()*8000); return; }
-    const o=new Tone.Oscillator(1600+Math.random()*1800,'sine');
-    const e=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.14,sustain:0.18,release:0.5});
-    const g=new Tone.Gain(0.035).connect(masterGain);
-    const p=new Tone.Panner(Math.random()*2-1).connect(g);
-    o.connect(e); e.connect(p); o.start(); e.triggerAttackRelease(0.08+Math.random()*0.18);
-    setTimeout(()=>o.dispose(),1500);
-    setTimeout(chirp,2500+Math.random()*9000);
-  })();
-
-  // Leaves
-  const ln=new Tone.Noise('white');
-  const lf=new Tone.Filter(3200,'bandpass'); lf.Q.value=2.2;
-  rustleEnv=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.28,sustain:0,release:0.5});
-  const lg=new Tone.Gain(0.08).connect(masterGain);
-  ln.connect(lf); lf.connect(rustleEnv); rustleEnv.connect(lg); ln.start();
-  (function ar() {
-    if(!isMuted) rustleEnv.triggerAttackRelease(0.15+Math.random()*0.35);
-    setTimeout(ar,1500+Math.random()*5000);
-  })();
-
-  // Rumble
-  const rn=new Tone.Noise('brown');
-  const rf=new Tone.Filter(70,'lowpass');
-  const rg=new Tone.Gain(0.055).connect(masterGain);
-  rn.connect(rf); rf.connect(rg); rn.start();
-}
-
-document.getElementById('mute').addEventListener('click', ()=>{
-  isMuted=!isMuted;
-  if(masterGain) masterGain.gain.rampTo(isMuted?0:0.65,0.4);
-  document.getElementById('wave1').style.opacity=isMuted?'0.15':'1';
-  document.getElementById('wave2').style.opacity=isMuted?'0.15':'1';
-});
-document.addEventListener('click', startAudio, {once:true});
-document.addEventListener('keydown', startAudio, {once:true});
-
-// ============================================================
-// LOOP
-// ============================================================
-let t=0, lastT=null;
-
-function frame(now) {
-  if(!lastT) lastT=now;
-  const dt=Math.min((now-lastT)/1000,0.05);
-  lastT=now; t+=dt;
-
-  tickWind(dt);
-  updateWind(t);
-  drawBG(t);
-  renderer.render(scene, camera);
-
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-
-function fadeIn() {
+function fadeIn(){
   setTimeout(()=>{
     document.getElementById('loading').classList.add('fade');
     setTimeout(()=>document.getElementById('loading').remove(),1700);
     document.getElementById('label').classList.add('visible');
     document.getElementById('next').classList.add('visible');
     document.getElementById('mute').classList.add('visible');
-  }, 600);
+  },500);
 }
 
-document.getElementById('next').addEventListener('click', ()=>{
+// ── AUDIO ─────────────────────────────────────────────────────
+let audioOn=false,isMuted=false,masterGain,rustleEnv;
+async function startAudio(){
+  if(audioOn)return; audioOn=true; await Tone.start();
+  masterGain=new Tone.Gain(0.65).toDestination();
+  const wn=new Tone.Noise('pink'),wf=new Tone.Filter(300,'bandpass');
+  wf.Q.value=0.5;
+  const wg=new Tone.Gain(0).connect(masterGain);
+  wn.connect(wf);wf.connect(wg);wn.start();
+  new Tone.LFO({frequency:0.06,min:0,max:0.16}).connect(wg.gain).start();
+  (function chirp(){
+    if(isMuted){setTimeout(chirp,3000+Math.random()*8000);return;}
+    const o=new Tone.Oscillator(1600+Math.random()*1800,'sine');
+    const e=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.14,sustain:0.18,release:0.5});
+    const g=new Tone.Gain(0.035).connect(masterGain);
+    const p=new Tone.Panner(Math.random()*2-1).connect(g);
+    o.connect(e);e.connect(p);o.start();e.triggerAttackRelease(0.08+Math.random()*0.18);
+    setTimeout(()=>o.dispose(),1500);
+    setTimeout(chirp,2500+Math.random()*9000);
+  })();
+  const ln=new Tone.Noise('white'),lf=new Tone.Filter(3200,'bandpass');
+  lf.Q.value=2.2;
+  rustleEnv=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.28,sustain:0,release:0.5});
+  const lg=new Tone.Gain(0.08).connect(masterGain);
+  ln.connect(lf);lf.connect(rustleEnv);rustleEnv.connect(lg);ln.start();
+  (function ar(){
+    if(!isMuted)rustleEnv.triggerAttackRelease(0.15+Math.random()*0.35);
+    setTimeout(ar,1500+Math.random()*5000);
+  })();
+  const rn=new Tone.Noise('brown'),rf=new Tone.Filter(70,'lowpass');
+  const rg=new Tone.Gain(0.055).connect(masterGain);
+  rn.connect(rf);rf.connect(rg);rn.start();
+}
+document.getElementById('mute').addEventListener('click',()=>{
+  isMuted=!isMuted;
+  if(masterGain)masterGain.gain.rampTo(isMuted?0:0.65,0.4);
+  document.getElementById('wave1').style.opacity=isMuted?'0.15':'1';
+  document.getElementById('wave2').style.opacity=isMuted?'0.15':'1';
+});
+document.addEventListener('click',startAudio,{once:true});
+document.addEventListener('keydown',startAudio,{once:true});
+
+// ── LOOP ──────────────────────────────────────────────────────
+let t=0,lastT=null;
+(function frame(now){
+  if(!lastT)lastT=now;
+  const dt=Math.min((now-lastT)/1000,0.05);
+  lastT=now; t+=dt;
+  tickWind(dt);
+  updateWind(t);
+  drawBG(t);
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+})(performance.now());
+
+document.getElementById('next').addEventListener('click',()=>{
   document.body.style.transition='opacity 1.2s ease';
   document.body.style.opacity='0';
-  setTimeout(()=>{ window.location.href='02.html'; },1200);
+  setTimeout(()=>{window.location.href='02.html';},1200);
 });
 </script>
 </body>
