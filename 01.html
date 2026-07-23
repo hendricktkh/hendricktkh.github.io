@@ -312,7 +312,7 @@ personLoader.load('person.glb',gltf=>{
   const person=gltf.scene;
   const s=18;
   person.scale.set(s,s,s);
-  person.position.set(0, (-0.156*s)+0.3, -10);
+  person.position.set(0, (-0.156*s)+2, -10);
   person.traverse(child=>{
     if(!child.isMesh) return;
     child.material=child.material.clone();
