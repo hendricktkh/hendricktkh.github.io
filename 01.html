@@ -132,26 +132,28 @@ function drawBG(t){
   bgCtx.fillStyle=hg;
   bgCtx.fillRect(0,horizonY*0.6,W,horizonY*0.5);
 
-  // Ground — dark-spruce at horizon bleeding to electric chartreuse near camera
+  // Ground — very dark at horizon, brightens toward camera
   const grass=bgCtx.createLinearGradient(0,horizonY,0,H);
-  grass.addColorStop(0,   '#002b14'); // very dark at horizon
-  grass.addColorStop(0.12,'#004b23'); // dark-spruce
-  grass.addColorStop(0.28,'#006400'); // green
-  grass.addColorStop(0.48,'#008000'); // green-3
-  grass.addColorStop(0.66,'#38b000'); // bright-fern
+  grass.addColorStop(0,   '#100818'); // almost black-purple at horizon (matches sky base)
+  grass.addColorStop(0.08,'#001a0c'); // dark
+  grass.addColorStop(0.22,'#004b23'); // dark-spruce
+  grass.addColorStop(0.42,'#006400'); // green
+  grass.addColorStop(0.62,'#38b000'); // bright-fern
   grass.addColorStop(0.82,'#70e000'); // radioactive-grass
-  grass.addColorStop(0.93,'#9ef01a'); // slime-lime
-  grass.addColorStop(1,   '#ccff33'); // chartreuse
+  grass.addColorStop(0.94,'#9ef01a'); // slime-lime
+  grass.addColorStop(1,   '#aadd11'); // toned chartreuse (not full neon)
   bgCtx.fillStyle=grass;
   bgCtx.fillRect(0,horizonY,W,H-horizonY);
 
-  // Blend line — soft feather at horizon so sky/grass don't hard-cut
-  const blend=bgCtx.createLinearGradient(0,horizonY-18,0,horizonY+18);
-  blend.addColorStop(0,'rgba(239,122,133,0)');
-  blend.addColorStop(0.5,'rgba(0,42,20,0.35)');
-  blend.addColorStop(1,'rgba(0,42,20,0)');
+  // Wide soft blend at horizon — pulls sky coral into the ground dark
+  const blend=bgCtx.createLinearGradient(0,horizonY-40,0,horizonY+40);
+  blend.addColorStop(0,   'rgba(239,122,133,0)');
+  blend.addColorStop(0.38,'rgba(239,122,133,0.22)');
+  blend.addColorStop(0.5, 'rgba(16,8,24,0.55)');
+  blend.addColorStop(0.62,'rgba(0,26,12,0.4)');
+  blend.addColorStop(1,   'rgba(0,26,12,0)');
   bgCtx.fillStyle=blend;
-  bgCtx.fillRect(0,horizonY-18,W,36);
+  bgCtx.fillRect(0,horizonY-40,W,80);
 
   // Grass blades
   drawGrass(t);
@@ -252,21 +254,21 @@ function updateWind(t){
 */
 function placeTrees(tmpl){
   const trees=[
-    // Far background — small, dark, just visible through gap
-    {x:-12, z:-20, sx:1.0, sy:1.3, ry:0.9,  ph:3.1, dk:0.5},
-    {x: 12, z:-20, sx:0.9, sy:1.2, ry:-1.1, ph:1.4, dk:0.5},
+    // Far background — small, centred gap closes here
+    {x:-8,  z:-25, sx:0.9, sy:1.2, ry:0.9,  ph:3.1, dk:0.7},
+    {x: 8,  z:-25, sx:0.8, sy:1.1, ry:-1.1, ph:1.4, dk:0.7},
 
-    // Mid background — getting bigger
-    {x:-17, z:  5, sx:1.2, sy:1.6, ry:0.5,  ph:2.2, dk:0.65},
-    {x: 17, z:  5, sx:1.1, sy:1.5, ry:-0.7, ph:0.8, dk:0.65},
+    // Mid background — wider spread
+    {x:-20, z:  0, sx:1.1, sy:1.5, ry:0.5,  ph:2.2, dk:0.78},
+    {x: 20, z:  0, sx:1.0, sy:1.4, ry:-0.7, ph:0.8, dk:0.78},
 
-    // Foreground — clear of the centre, framing the clearing
-    {x:-21, z: 22, sx:1.4, sy:1.85,ry:0.2,  ph:1.8, dk:0.8},
-    {x: 21, z: 22, sx:1.3, sy:1.8, ry:-0.3, ph:2.7, dk:0.8},
+    // Foreground — well outside centre
+    {x:-30, z: 20, sx:1.3, sy:1.8, ry:0.2,  ph:1.8, dk:0.85},
+    {x: 30, z: 20, sx:1.2, sy:1.7, ry:-0.3, ph:2.7, dk:0.85},
 
-    // Near flankers — closest trees, anchored to edges, you see trunks + canopy
-    {x:-26, z: 38, sx:1.6, sy:2.1, ry:0.1,  ph:0.4, dk:0.88},
-    {x: 26, z: 38, sx:1.5, sy:2.0, ry:-0.15,ph:3.5, dk:0.88},
+    // Near flankers — at the very screen edges, partially cropped is fine
+    {x:-40, z: 38, sx:1.5, sy:2.0, ry:0.1,  ph:0.4, dk:0.92},
+    {x: 40, z: 38, sx:1.4, sy:1.9, ry:-0.15,ph:3.5, dk:0.92},
   ];
 
   trees.forEach(p=>{
@@ -298,26 +300,24 @@ loader.load('tree.glb',gltf=>{
 },null,err=>{console.error(err);fadeIn();});
 
 // ── PERSON ───────────────────────────────────────────────────
-// Model origin is mid-body (Y: -0.156 to +0.131, total 0.287 units tall).
-// Scale up so they read as a human figure in the scene.
-// Sink Y so the bottom edge is buried below the ground plane.
+// Raw model bounds: Y min=-0.156, max=0.131, total height=0.287 units
+// Scale 18 → person is ~5.2 units tall (readable in scene)
+// Y position: sink just enough to hide the very bottom edge
+//   bottom of model after scale = -0.156 * 18 = -2.808
+//   we want ground at Y=0, so lift by 2.808, then sink 0.3 extra to bury feet
+//   final Y = 2.808 - 0.3 = 2.508
+// Z=-10: middle-distance, visible in the clearing gap between trees
 const personLoader=new THREE.GLTFLoader();
 personLoader.load('person.glb',gltf=>{
   const person=gltf.scene;
-  // At scene scale, tree height ≈ 5*sy units. A person should be ~0.35x that.
-  // Model is 0.287 units tall raw → scale ~6 makes them ≈1.7 units = realistic human.
-  const s=6;
+  const s=18;
   person.scale.set(s,s,s);
-  // Place at the far end of the clearing, dead centre
-  // Sink by half the model's bottom offset (0.156 * s) so feet are underground
-  person.position.set(0, -0.156*s - 0.15, -18);
-  // Tint to match the purple-pink scene lighting
+  person.position.set(0, (-0.156*s)+0.3, -10);
   person.traverse(child=>{
     if(!child.isMesh) return;
     child.material=child.material.clone();
-    // Slight purple-pink tint via emissive, keep base colour
-    child.material.emissive=new THREE.Color(0x220033);
-    child.material.emissiveIntensity=0.18;
+    child.material.emissive=new THREE.Color(0x1a0030);
+    child.material.emissiveIntensity=0.25;
   });
   scene.add(person);
 },null,err=>console.error('person.glb failed:',err));
