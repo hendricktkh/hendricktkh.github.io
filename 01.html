@@ -333,35 +333,44 @@ function fadeIn(){
 }
 
 // ── AUDIO — constant ambient wind ────────────────────────────
-let audioOn=false,isMuted=false,masterGain;
-async function startAudio(){
-  if(audioOn)return; audioOn=true; await Tone.start();
-  masterGain=new Tone.Gain(0.7).toDestination();
+// Default: muted. Click speaker to unmute.
+let audioOn=false,isMuted=true,masterGain;
 
-  // Low rumble — deep body of wind
+async function initAudio(){
+  if(audioOn)return; audioOn=true; await Tone.start();
+
+  // masterGain = mute switch only, starts at 0
+  masterGain=new Tone.Gain(0).toDestination();
+
+  // subGain = level + LFO swell (never touches masterGain so mute always works)
+  const subGain=new Tone.Gain(0.3).connect(masterGain);
+  const lfo=new Tone.LFO({frequency:0.04,min:0.75,max:1.0,type:'sine'});
+  lfo.connect(subGain.gain); lfo.start();
+
+  // Low rumble
   const brown=new Tone.Noise('brown');
   const lowpass=new Tone.Filter(180,'lowpass');
-  const brownGain=new Tone.Gain(0.28).connect(masterGain);
+  const brownGain=new Tone.Gain(0.7).connect(subGain);
   brown.connect(lowpass); lowpass.connect(brownGain); brown.start();
 
-  // Mid whoosh — the actual wind texture
+  // Mid whoosh
   const pink=new Tone.Noise('pink');
   const bandpass=new Tone.Filter({frequency:600,type:'bandpass',Q:0.6});
-  const pinkGain=new Tone.Gain(0.18).connect(masterGain);
+  const pinkGain=new Tone.Gain(0.45).connect(subGain);
   pink.connect(bandpass); bandpass.connect(pinkGain); pink.start();
-
-  // Slow volume swell — wind gusting and ebbing naturally
-  const lfo=new Tone.LFO({frequency:0.04,min:0.55,max:1.0,type:'sine'});
-  lfo.connect(masterGain.gain); lfo.start();
 }
-document.getElementById('mute').addEventListener('click',()=>{
+
+// Icon starts in muted state
+document.getElementById('wave1').style.opacity='0.15';
+document.getElementById('wave2').style.opacity='0.15';
+
+document.getElementById('mute').addEventListener('click',async ()=>{
   isMuted=!isMuted;
-  if(masterGain)masterGain.gain.rampTo(isMuted?0:0.7,0.6);
+  if(!audioOn) await initAudio(); // start audio on first unmute
+  if(masterGain) masterGain.gain.rampTo(isMuted?0:1,0.6);
   document.getElementById('wave1').style.opacity=isMuted?'0.15':'1';
   document.getElementById('wave2').style.opacity=isMuted?'0.15':'1';
 });
-document.addEventListener('click',startAudio,{once:true});
-document.addEventListener('keydown',startAudio,{once:true});
 
 // ── LOOP ─────────────────────────────────────────────────────
 let t=0,lastT=null;
