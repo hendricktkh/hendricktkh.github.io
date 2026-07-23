@@ -307,39 +307,31 @@ function fadeIn(){
   },500);
 }
 
-// ── AUDIO ────────────────────────────────────────────────────
+// ── AUDIO — constant ambient wind ────────────────────────────
 let audioOn=false,isMuted=false,masterGain;
 async function startAudio(){
   if(audioOn)return; audioOn=true; await Tone.start();
-  masterGain=new Tone.Gain(0.65).toDestination();
-  const wn=new Tone.Noise('pink'),wf=new Tone.Filter(300,'bandpass');
-  wf.Q.value=0.5;
-  const wg=new Tone.Gain(0).connect(masterGain);
-  wn.connect(wf);wf.connect(wg);wn.start();
-  new Tone.LFO({frequency:0.06,min:0,max:0.16}).connect(wg.gain).start();
-  (function chirp(){
-    if(isMuted){setTimeout(chirp,3000+Math.random()*8000);return;}
-    const o=new Tone.Oscillator(1600+Math.random()*1800,'sine');
-    const e=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.14,sustain:0.18,release:0.5});
-    const g=new Tone.Gain(0.035).connect(masterGain);
-    const p=new Tone.Panner(Math.random()*2-1).connect(g);
-    o.connect(e);e.connect(p);o.start();e.triggerAttackRelease(0.08+Math.random()*0.18);
-    setTimeout(()=>o.dispose(),1500);
-    setTimeout(chirp,2500+Math.random()*9000);
-  })();
-  const ln=new Tone.Noise('white'),lf=new Tone.Filter(3200,'bandpass');
-  lf.Q.value=2.2;
-  const re=new Tone.AmplitudeEnvelope({attack:0.04,decay:0.28,sustain:0,release:0.5});
-  const lg=new Tone.Gain(0.08).connect(masterGain);
-  ln.connect(lf);lf.connect(re);re.connect(lg);ln.start();
-  (function ar(){if(!isMuted)re.triggerAttackRelease(0.15+Math.random()*0.35);setTimeout(ar,1500+Math.random()*5000)})();
-  const rn=new Tone.Noise('brown'),rf=new Tone.Filter(70,'lowpass');
-  const rg=new Tone.Gain(0.055).connect(masterGain);
-  rn.connect(rf);rf.connect(rg);rn.start();
+  masterGain=new Tone.Gain(0.7).toDestination();
+
+  // Low rumble — deep body of wind
+  const brown=new Tone.Noise('brown');
+  const lowpass=new Tone.Filter(180,'lowpass');
+  const brownGain=new Tone.Gain(0.28).connect(masterGain);
+  brown.connect(lowpass); lowpass.connect(brownGain); brown.start();
+
+  // Mid whoosh — the actual wind texture
+  const pink=new Tone.Noise('pink');
+  const bandpass=new Tone.Filter({frequency:600,type:'bandpass',Q:0.6});
+  const pinkGain=new Tone.Gain(0.18).connect(masterGain);
+  pink.connect(bandpass); bandpass.connect(pinkGain); pink.start();
+
+  // Slow volume swell — wind gusting and ebbing naturally
+  const lfo=new Tone.LFO({frequency:0.04,min:0.55,max:1.0,type:'sine'});
+  lfo.connect(masterGain.gain); lfo.start();
 }
 document.getElementById('mute').addEventListener('click',()=>{
   isMuted=!isMuted;
-  if(masterGain)masterGain.gain.rampTo(isMuted?0:0.65,0.4);
+  if(masterGain)masterGain.gain.rampTo(isMuted?0:0.7,0.6);
   document.getElementById('wave1').style.opacity=isMuted?'0.15':'1';
   document.getElementById('wave2').style.opacity=isMuted?'0.15':'1';
 });
