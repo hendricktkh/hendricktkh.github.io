@@ -297,6 +297,31 @@ loader.load('tree.glb',gltf=>{
   fadeIn();
 },null,err=>{console.error(err);fadeIn();});
 
+// ── PERSON ───────────────────────────────────────────────────
+// Model origin is mid-body (Y: -0.156 to +0.131, total 0.287 units tall).
+// Scale up so they read as a human figure in the scene.
+// Sink Y so the bottom edge is buried below the ground plane.
+const personLoader=new THREE.GLTFLoader();
+personLoader.load('person.glb',gltf=>{
+  const person=gltf.scene;
+  // At scene scale, tree height ≈ 5*sy units. A person should be ~0.35x that.
+  // Model is 0.287 units tall raw → scale ~6 makes them ≈1.7 units = realistic human.
+  const s=6;
+  person.scale.set(s,s,s);
+  // Place at the far end of the clearing, dead centre
+  // Sink by half the model's bottom offset (0.156 * s) so feet are underground
+  person.position.set(0, -0.156*s - 0.15, -18);
+  // Tint to match the purple-pink scene lighting
+  person.traverse(child=>{
+    if(!child.isMesh) return;
+    child.material=child.material.clone();
+    // Slight purple-pink tint via emissive, keep base colour
+    child.material.emissive=new THREE.Color(0x220033);
+    child.material.emissiveIntensity=0.18;
+  });
+  scene.add(person);
+},null,err=>console.error('person.glb failed:',err));
+
 function fadeIn(){
   setTimeout(()=>{
     document.getElementById('loading').classList.add('fade');
