@@ -6,14 +6,14 @@
 <title>01 — clearing</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
+html, body { width:100%; height:100%; overflow:hidden; background:#1a0a2e; }
 
 #bg-canvas { position:fixed; inset:0; z-index:0; }
 #three-canvas { position:fixed; inset:0; z-index:1; pointer-events:none; }
 
 #grain {
   position:fixed; inset:-50%; width:200%; height:200%;
-  pointer-events:none; z-index:20; opacity:0.025;
+  pointer-events:none; z-index:20; opacity:0.03;
   animation:grainShift 0.14s steps(1) infinite;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:256px 256px;
@@ -27,7 +27,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
 #label {
   position:fixed; top:1.8rem; left:2rem; z-index:100;
   font-family:'Georgia',serif; font-size:0.7rem; letter-spacing:0.18em;
-  color:rgba(180,210,160,0.25); text-transform:uppercase;
+  color:rgba(255,194,226,0.3); text-transform:uppercase;
   opacity:0; transition:opacity 2s ease; user-select:none;
 }
 #label.visible { opacity:1; }
@@ -38,21 +38,21 @@ html, body { width:100%; height:100%; overflow:hidden; background:#0a110a; }
   border:none; background:none; cursor:pointer; opacity:0; transition:opacity 1.2s ease;
 }
 #next.visible { opacity:1; }
-#next svg { width:28px; height:28px; stroke:rgba(180,210,150,0.4); fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s,transform .3s; }
-#next:hover svg { stroke:rgba(210,240,180,0.85); transform:translateX(4px); }
+#next svg { width:28px; height:28px; stroke:rgba(184,146,255,0.5); fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s,transform .3s; }
+#next:hover svg { stroke:rgba(255,144,179,0.9); transform:translateX(4px); }
 
 #mute {
   position:fixed; bottom:2rem; left:2rem; z-index:100;
   background:none; border:none; cursor:pointer; opacity:0; transition:opacity 1.2s ease; padding:4px;
 }
 #mute.visible { opacity:1; }
-#mute svg { width:20px; height:20px; stroke:rgba(180,210,150,0.3); fill:none; stroke-width:1.4; stroke-linecap:round; transition:stroke .3s; }
-#mute:hover svg { stroke:rgba(200,230,170,0.7); }
+#mute svg { width:20px; height:20px; stroke:rgba(184,146,255,0.4); fill:none; stroke-width:1.4; stroke-linecap:round; transition:stroke .3s; }
+#mute:hover svg { stroke:rgba(255,144,179,0.8); }
 
 #loading {
   position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
-  background:#0a110a; font-family:'Georgia',serif; font-size:0.72rem; letter-spacing:0.22em;
-  color:rgba(160,200,130,0.35); text-transform:uppercase; transition:opacity 1.6s ease;
+  background:#1a0a2e; font-family:'Georgia',serif; font-size:0.72rem; letter-spacing:0.22em;
+  color:rgba(184,146,255,0.4); text-transform:uppercase; transition:opacity 1.6s ease;
 }
 #loading.fade { opacity:0; pointer-events:none; }
 </style>
@@ -104,132 +104,108 @@ function tickWind(dt) {
   windGust *= 0.975;
 }
 
-// ── BG CANVAS — sky, ground, glow, mid trees, fog, vignette ──
+// ── BG CANVAS — sky + grass only ─────────────────────────────
 function drawBG(t) {
   bgCtx.clearRect(0,0,W,H);
 
-  // Sky — overcast cool green
-  const sky = bgCtx.createLinearGradient(0,0,0,H*0.54);
-  sky.addColorStop(0,   '#6a8a62');
-  sky.addColorStop(0.4, '#9ab88a');
-  sky.addColorStop(0.75,'#c2d8a8');
-  sky.addColorStop(1,   '#b0cc96');
-  bgCtx.fillStyle=sky; bgCtx.fillRect(0,0,W,H*0.54);
+  // Sky — majorelle purple → periwinkle → blush → cotton candy → coral
+  const sky = bgCtx.createLinearGradient(0,0,0,H*0.58);
+  sky.addColorStop(0,   '#6e44ff'); // majorelle-blue
+  sky.addColorStop(0.3, '#b892ff'); // soft-periwinkle
+  sky.addColorStop(0.6, '#ffc2e2'); // blush-pop
+  sky.addColorStop(0.82,'#ff90b3'); // cotton-candy
+  sky.addColorStop(1,   '#ef7a85'); // light-coral
+  bgCtx.fillStyle=sky;
+  bgCtx.fillRect(0,0,W,H*0.58);
 
-  // Backlit glow in clearing centre
-  const gY=H*0.42;
-  const glow=bgCtx.createRadialGradient(W/2,gY,0, W/2,gY,W*0.22);
-  glow.addColorStop(0,  'rgba(215,240,190,0.7)');
-  glow.addColorStop(0.4,'rgba(180,215,148,0.32)');
-  glow.addColorStop(1,  'rgba(130,175,100,0)');
-  bgCtx.fillStyle=glow; bgCtx.fillRect(0,0,W,H*0.54);
+  // Horizon glow — warm pink bloom where sky meets ground
+  const hgY = H*0.56;
+  const hg = bgCtx.createRadialGradient(W/2, hgY, 0, W/2, hgY, W*0.5);
+  hg.addColorStop(0,   'rgba(255,200,220,0.45)');
+  hg.addColorStop(0.4, 'rgba(255,144,179,0.15)');
+  hg.addColorStop(1,   'rgba(110,68,255,0)');
+  bgCtx.fillStyle=hg;
+  bgCtx.fillRect(0,0,W,H*0.65);
 
-  // Ground — dark mossy floor
-  const grd=bgCtx.createLinearGradient(0,H*0.5,0,H);
-  grd.addColorStop(0,  '#1a2a14');
-  grd.addColorStop(0.2,'#151f10');
-  grd.addColorStop(1,  '#080c07');
-  bgCtx.fillStyle=grd; bgCtx.fillRect(0,H*0.5,W,H*0.5);
+  // Grass — electric gradient from horizon to bottom
+  // dark-spruce → green → bright-fern → radioactive-grass → slime-lime → chartreuse
+  const grass = bgCtx.createLinearGradient(0,H*0.56,0,H);
+  grass.addColorStop(0,   '#004b23'); // dark-spruce (back / far grass)
+  grass.addColorStop(0.15,'#006400'); // green
+  grass.addColorStop(0.35,'#008000'); // green-3
+  grass.addColorStop(0.58,'#38b000'); // bright-fern
+  grass.addColorStop(0.78,'#70e000'); // radioactive-grass
+  grass.addColorStop(0.92,'#9ef01a'); // slime-lime
+  grass.addColorStop(1,   '#ccff33'); // chartreuse (near / foreground)
+  bgCtx.fillStyle=grass;
+  bgCtx.fillRect(0,H*0.56,W,H*0.44);
 
-  // Lit pool on clearing floor
-  const fl=bgCtx.createRadialGradient(W/2,H*0.62,0, W/2,H*0.68,W*0.18);
-  fl.addColorStop(0,  'rgba(72,105,48,0.42)');
-  fl.addColorStop(0.5,'rgba(45,72,30,0.18)');
-  fl.addColorStop(1,  'rgba(15,28,10,0)');
-  bgCtx.fillStyle=fl; bgCtx.fillRect(0,H*0.5,W,H*0.5);
+  // Grass blade layer — animated swaying blades in foreground
+  drawGrass(t);
 
-  // Mid-distance painted trees (visible through the gap)
-  drawMidTrees(t);
+  // Subtle vignette on left/right edges only — dark enough to frame without blocking trees
+  const vL=bgCtx.createLinearGradient(0,0,W*0.18,0);
+  vL.addColorStop(0,'rgba(10,2,30,0.6)'); vL.addColorStop(1,'rgba(10,2,30,0)');
+  bgCtx.fillStyle=vL; bgCtx.fillRect(0,0,W*0.18,H);
 
-  // Low fog
-  for (let i=0;i<4;i++) {
-    const ph=i*1.7+t*0.025;
-    const cx=W*0.5+Math.sin(ph)*W*0.15+(i-1.5)*W*0.14;
-    const cy=H*(0.57+0.03*Math.sin(ph*0.6));
-    const rx=W*(0.16+0.07*Math.sin(ph*0.5));
-    const ry=H*0.04;
-    const fog=bgCtx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry));
-    fog.addColorStop(0,  'rgba(170,210,140,0.05)');
-    fog.addColorStop(0.6,'rgba(150,195,120,0.02)');
-    fog.addColorStop(1,  'transparent');
-    bgCtx.save(); bgCtx.scale(1,ry/rx);
-    bgCtx.beginPath(); bgCtx.arc(cx,cy*(rx/ry),rx,0,Math.PI*2);
-    bgCtx.fillStyle=fog; bgCtx.fill(); bgCtx.restore();
-  }
+  const vR=bgCtx.createLinearGradient(W,0,W*0.82,0);
+  vR.addColorStop(0,'rgba(10,2,30,0.6)'); vR.addColorStop(1,'rgba(10,2,30,0)');
+  bgCtx.fillStyle=vR; bgCtx.fillRect(W*0.82,0,W*0.18,H);
 
-  // Vignette — sides, top, bottom
-  const vL=bgCtx.createLinearGradient(0,0,W*0.32,0);
-  vL.addColorStop(0,'rgba(4,8,3,0.92)'); vL.addColorStop(1,'rgba(4,8,3,0)');
-  bgCtx.fillStyle=vL; bgCtx.fillRect(0,0,W*0.32,H);
-
-  const vR=bgCtx.createLinearGradient(W,0,W*0.68,0);
-  vR.addColorStop(0,'rgba(4,8,3,0.92)'); vR.addColorStop(1,'rgba(4,8,3,0)');
-  bgCtx.fillStyle=vR; bgCtx.fillRect(W*0.68,0,W*0.32,H);
-
-  const vT=bgCtx.createLinearGradient(0,0,0,H*0.18);
-  vT.addColorStop(0,'rgba(3,7,2,0.8)'); vT.addColorStop(1,'rgba(3,7,2,0)');
-  bgCtx.fillStyle=vT; bgCtx.fillRect(0,0,W,H*0.18);
-
-  const vB=bgCtx.createLinearGradient(0,H,0,H*0.8);
-  vB.addColorStop(0,'rgba(3,6,2,0.7)'); vB.addColorStop(1,'rgba(3,6,2,0)');
-  bgCtx.fillStyle=vB; bgCtx.fillRect(0,H*0.8,W,H*0.2);
+  // Very subtle top vignette
+  const vT=bgCtx.createLinearGradient(0,0,0,H*0.12);
+  vT.addColorStop(0,'rgba(8,2,24,0.55)'); vT.addColorStop(1,'rgba(8,2,24,0)');
+  bgCtx.fillStyle=vT; bgCtx.fillRect(0,0,W,H*0.12);
 }
 
-// Mid-distance 2D trees — visible in the gap between GLB trees
-function drawMidTrees(t) {
-  const hz=H*0.52;
-  const w=windStrength+windGust;
+// ── GRASS BLADES ──────────────────────────────────────────────
+const BLADE_COUNT = 220;
+const blades = [];
+for(let i=0;i<BLADE_COUNT;i++){
+  blades.push({
+    x: Math.random(),          // 0-1 of W
+    y: 0.58 + Math.random()*0.42, // vertical position (lower = more foreground)
+    h: 0.018 + Math.random()*0.055, // height as fraction of H
+    w: 1.2 + Math.random()*2.2,
+    ph: Math.random()*Math.PI*2,
+    spd: 0.7 + Math.random()*0.8,
+    lean: (Math.random()-0.5)*0.18,
+  });
+}
+// Sort back to front so foreground blades draw on top
+blades.sort((a,b)=>a.y-b.y);
 
-  const trees=[
-    {cx:W*0.38,h:H*0.30,cr:W*0.038,tw:3, ph:0.4},
-    {cx:W*0.44,h:H*0.36,cr:W*0.030,tw:2, ph:1.2},
-    {cx:W*0.50,h:H*0.40,cr:W*0.028,tw:2, ph:2.0, conifer:true},
-    {cx:W*0.55,h:H*0.33,cr:W*0.032,tw:2, ph:0.8},
-    {cx:W*0.62,h:H*0.28,cr:W*0.036,tw:3, ph:1.8},
-    {cx:W*0.34,h:H*0.24,cr:W*0.024,tw:2, ph:2.6, conifer:true},
-    {cx:W*0.66,h:H*0.26,cr:W*0.022,tw:2, ph:3.2, conifer:true},
-  ];
+function drawGrass(t) {
+  const w = windStrength + windGust;
 
-  trees.forEach(tr=>{
-    const sway=Math.sin(windTime*1.0+tr.ph)*w*0.013;
-    bgCtx.save(); bgCtx.globalAlpha=0.78;
+  blades.forEach(b => {
+    const bx = b.x * W;
+    const by = b.y * H;
+    const bh = b.h * H;
+    const depth = (b.y - 0.58) / 0.42; // 0=far, 1=near
 
-    if (tr.conifer) {
-      const col=bgCtx.createLinearGradient(tr.cx,hz-tr.h,tr.cx,hz);
-      col.addColorStop(0,'rgba(75,110,58,0.5)');
-      col.addColorStop(1,'rgba(45,70,35,0.35)');
-      bgCtx.fillStyle=col;
-      bgCtx.beginPath();
-      bgCtx.moveTo(tr.cx+sway*tr.h, hz-tr.h);
-      bgCtx.lineTo(tr.cx+sway*tr.h*0.5+tr.cr*0.8, hz-tr.h*0.5);
-      bgCtx.lineTo(tr.cx+sway*tr.h*0.3+tr.cr*1.3, hz-tr.h*0.22);
-      bgCtx.lineTo(tr.cx+tr.tw*0.5, hz);
-      bgCtx.lineTo(tr.cx-tr.tw*0.5, hz);
-      bgCtx.lineTo(tr.cx-sway*tr.h*0.3-tr.cr*1.3, hz-tr.h*0.22);
-      bgCtx.lineTo(tr.cx-sway*tr.h*0.5-tr.cr*0.8, hz-tr.h*0.5);
-      bgCtx.closePath(); bgCtx.fill();
-    } else {
-      const tx=tr.cx+sway*tr.h, ty=hz-tr.h;
-      bgCtx.fillStyle='rgba(28,40,22,0.65)';
-      bgCtx.beginPath();
-      bgCtx.moveTo(tr.cx-tr.tw*0.5, hz);
-      bgCtx.quadraticCurveTo(tr.cx+sway*tr.h*0.4, hz-tr.h*0.5, tx, ty+tr.cr*0.5);
-      bgCtx.lineTo(tx+tr.tw*0.5, ty+tr.cr*0.5);
-      bgCtx.quadraticCurveTo(tr.cx+sway*tr.h*0.4+tr.tw, hz-tr.h*0.5, tr.cx+tr.tw*0.5, hz);
-      bgCtx.closePath(); bgCtx.fill();
-      const cg=bgCtx.createRadialGradient(tx,ty,0,tx,ty,tr.cr);
-      cg.addColorStop(0,  'rgba(88,128,65,0.52)');
-      cg.addColorStop(0.7,'rgba(55,88,40,0.45)');
-      cg.addColorStop(1,  'rgba(155,205,120,0.12)');
-      bgCtx.fillStyle=cg;
-      bgCtx.beginPath();
-      for(let a=0;a<Math.PI*2;a+=0.2){
-        const r=tr.cr*(0.82+0.2*Math.sin(a*3.3+tr.ph));
-        const px=tx+Math.cos(a)*r, py=ty+Math.sin(a)*r*0.8;
-        a===0?bgCtx.moveTo(px,py):bgCtx.lineTo(px,py);
-      }
-      bgCtx.closePath(); bgCtx.fill();
-    }
+    // Colour: far blades are dark, near blades are electric/chartreuse
+    const r1 = Math.round(0 + depth * 110);
+    const g1 = Math.round(75 + depth * 155);
+    const b1 = Math.round(35 + depth * 0);
+    const alpha = 0.45 + depth * 0.5;
+
+    // Sway
+    const sway = (Math.sin(windTime*b.spd + b.ph)*w*0.6 + b.lean) * bh * 0.6;
+
+    bgCtx.save();
+    bgCtx.globalAlpha = alpha;
+    bgCtx.strokeStyle = `rgb(${r1},${g1},${b1})`;
+    bgCtx.lineWidth = b.w * (0.4 + depth*0.8);
+    bgCtx.lineCap = 'round';
+    bgCtx.beginPath();
+    bgCtx.moveTo(bx, by);
+    // Quadratic curve — tip sways, base is fixed
+    bgCtx.quadraticCurveTo(
+      bx + sway*0.5, by - bh*0.5,
+      bx + sway,     by - bh
+    );
+    bgCtx.stroke();
     bgCtx.restore();
   });
 }
@@ -244,25 +220,25 @@ renderer.setClearColor(0,0);
 
 const scene = new THREE.Scene();
 
-// Camera pulled WAY back so trees are actually smaller and scene reads correctly
-const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 500);
-camera.position.set(0, 2.5, 32);
-camera.lookAt(0, 5, 0);
+// Camera: moderate distance, slightly lower, looking slightly up
+const camera = new THREE.PerspectiveCamera(62, W/H, 0.1, 500);
+camera.position.set(0, 1.8, 26);
+camera.lookAt(0, 6, 0);
 
-// Overcast lighting — no hard directional sun
-scene.add(new THREE.HemisphereLight(0xa0c882, 0x18280e, 1.5));
-const back = new THREE.DirectionalLight(0xc0dca0, 0.7);
-back.position.set(0, 10, -15); scene.add(back);
-const fill = new THREE.DirectionalLight(0x608848, 0.18);
-fill.position.set(0, 3, 32); scene.add(fill);
+// Lighting: tinted to match the purple-pink sky
+scene.add(new THREE.HemisphereLight(0x9966ff, 0x004b23, 1.2));
+const rim = new THREE.DirectionalLight(0xff90b3, 0.9);
+rim.position.set(0, 12, -20); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xb892ff, 0.4);
+fill.position.set(0, 4, 26); scene.add(fill);
 
 // Wind vertex shader patch
 const WIND = `
   float wp = uT*1.05 + position.x*0.25 + uPh;
   float ws = sin(wp)*uW + sin(uT*0.68+uPh*1.3)*uW*0.38;
   float hf = clamp(transformed.y/uH,0.0,1.0); hf*=hf;
-  transformed.x += ws*hf*0.3;
-  transformed.z += ws*hf*0.1;
+  transformed.x += ws*hf*0.28;
+  transformed.z += ws*hf*0.09;
 `;
 const allU=[];
 function patchWind(mat, ph, h) {
@@ -276,7 +252,6 @@ function patchWind(mat, ph, h) {
 }
 function updateWind(t){const w=windStrength+windGust; allU.forEach(u=>{u.uT.value=t;u.uW.value=w;});}
 
-// Load and place trees
 const loader = new THREE.GLTFLoader();
 loader.load('tree.glb', gltf=>{
   placeTrees(gltf.scene);
@@ -284,23 +259,34 @@ loader.load('tree.glb', gltf=>{
 }, null, err=>{ console.error(err); fadeIn(); });
 
 function placeTrees(tmpl) {
-  // At Z=32, camera FOV 55°: half-width ≈ tan(27.5°)*32 ≈ 16.6
-  // We want trees flanking a clearing in the middle third
-  // Just 6 trees total — 2 close foreground, 2 mid, 1-2 background closing the gap
+  /*
+    CAGE layout — trees surround you from sides, not just left/right tunnel.
+    Camera at Z=26, FOV 62°: half-width ≈ tan(31°)*26 ≈ 15.6
 
+    Arrangement:
+    - 2 extreme foreground flankers (very close, almost off-screen left/right)
+    - 2 mid foreground trees (inward from flankers)
+    - 2 background trees on the sides
+    - 2 deep background trees closing the centre gap
+    dk = darkness/visibility. 1.0 = full material brightness, 0.1 = near black.
+    We want trees visible so dk is higher than before.
+  */
   const trees = [
-    // LEFT foreground — close, tall, frames the left side
-    { x:-10,  z: 8,  sx:1.8, sy:2.2, ry: 0.2, ph:0.5, dk:0.12 },
-    // RIGHT foreground — close, tall, frames the right side
-    { x: 10,  z: 8,  sx:1.7, sy:2.1, ry:-0.3, ph:1.6, dk:0.12 },
-    // LEFT mid
-    { x:-7,   z: 0,  sx:1.2, sy:1.5, ry: 0.6, ph:2.2, dk:0.28 },
-    // RIGHT mid
-    { x: 7,   z: 0,  sx:1.1, sy:1.45,ry:-0.8, ph:0.9, dk:0.28 },
-    // Background centre-left — closes the gap partially
-    { x:-3.5, z:-10, sx:0.85,sy:1.1, ry: 1.2, ph:3.1, dk:0.48 },
-    // Background centre-right
-    { x: 3.5, z:-10, sx:0.8, sy:1.05,ry:-1.4, ph:2.5, dk:0.48 },
+    // ── FAR BACKGROUND — closing the gap, pushed deep ──
+    { x:-4,   z:-22, sx:1.2, sy:1.5, ry: 0.8, ph:3.3, dk:0.55 },
+    { x: 4,   z:-22, sx:1.1, sy:1.4, ry:-1.0, ph:1.7, dk:0.55 },
+
+    // ── BACKGROUND SIDES ──
+    { x:-13,  z:-14, sx:1.4, sy:1.8, ry: 0.4, ph:2.8, dk:0.65 },
+    { x: 13,  z:-14, sx:1.3, sy:1.7, ry:-0.6, ph:0.6, dk:0.65 },
+
+    // ── MID FOREGROUND — visible, part of the cage ──
+    { x:-9,   z: 2,  sx:1.5, sy:2.0, ry: 0.5, ph:2.0, dk:0.75 },
+    { x: 9,   z: 2,  sx:1.4, sy:1.9, ry:-0.7, ph:1.1, dk:0.75 },
+
+    // ── EXTREME FOREGROUND FLANKERS — close to camera, tall, frame the sides ──
+    { x:-16,  z:14,  sx:2.0, sy:2.6, ry: 0.15,ph:0.3, dk:0.82 },
+    { x: 16,  z:14,  sx:1.9, sy:2.5, ry:-0.2, ph:1.9, dk:0.82 },
   ];
 
   trees.forEach(p=>{
@@ -312,8 +298,11 @@ function placeTrees(tmpl) {
     clone.traverse(child=>{
       if(!child.isMesh) return;
       child.material=child.material.clone();
-      child.material.color=(child.material.color||new THREE.Color(1,1,1)).multiplyScalar(p.dk);
-      if(child.material.name==='leaves'){
+      // Apply tint toward purple-pink to blend with sky palette
+      const base = child.material.color ? child.material.color.clone() : new THREE.Color(1,1,1);
+      base.multiplyScalar(p.dk);
+      child.material.color = base;
+      if(child.material.name==='leaves'||child.material.alphaMap){
         child.material.alphaTest=0.45;
         child.material.transparent=true;
         child.material.side=THREE.DoubleSide;
