@@ -254,23 +254,22 @@ function updateWind(t){
 */
 function placeTrees(tmpl){
   const trees=[
-    // Far background — small, centred gap closes here
-    {x:-8,  z:-25, sx:0.9, sy:1.2, ry:0.9,  ph:3.1, dk:0.7},
-    {x: 8,  z:-25, sx:0.8, sy:1.1, ry:-1.1, ph:1.4, dk:0.7},
-
-    // Mid background — wider spread
-    {x:-20, z:  0, sx:1.1, sy:1.5, ry:0.5,  ph:2.2, dk:0.78},
-    {x: 20, z:  0, sx:1.0, sy:1.4, ry:-0.7, ph:0.8, dk:0.78},
-
-    // Foreground — well outside centre
-    {x:-30, z: 20, sx:1.3, sy:1.8, ry:0.2,  ph:1.8, dk:0.85},
-    {x: 30, z: 20, sx:1.2, sy:1.7, ry:-0.3, ph:2.7, dk:0.85},
-
-    // Near flankers — at the very screen edges, partially cropped is fine
-    {x:-40, z: 38, sx:1.5, sy:2.0, ry:0.1,  ph:0.4, dk:0.92},
-    {x: 40, z: 38, sx:1.4, sy:1.9, ry:-0.15,ph:3.5, dk:0.92},
+    // Far background — closes the clearing at distance
+    {x:-10, z: 20, sx:0.9, sy:1.2, ry:0.9,  ph:3.1, dk:0.7},
+    {x: 10, z: 20, sx:0.8, sy:1.1, ry:-1.1, ph:1.4, dk:0.7},
+  
+    // Mid background
+    {x:-22, z: 35, sx:1.1, sy:1.5, ry:0.5,  ph:2.2, dk:0.78},
+    {x: 22, z: 35, sx:1.0, sy:1.4, ry:-0.7, ph:0.8, dk:0.78},
+  
+    // Foreground — wide spread, frame the sides
+    {x:-35, z: 46, sx:1.3, sy:1.8, ry:0.2,  ph:1.8, dk:0.85},
+    {x: 35, z: 46, sx:1.2, sy:1.7, ry:-0.3, ph:2.7, dk:0.85},
+  
+    // Near flankers — partially off-screen edges
+    {x:-50, z: 52, sx:1.5, sy:2.0, ry:0.1,  ph:0.4, dk:0.92},
+    {x: 50, z: 52, sx:1.4, sy:1.9, ry:-0.15,ph:3.5, dk:0.92},
   ];
-
   trees.forEach(p=>{
     const clone=tmpl.clone(true);
     clone.scale.set(p.sx,p.sy,p.sx);
@@ -312,7 +311,7 @@ personLoader.load('person.glb',gltf=>{
   const person=gltf.scene;
   const s=18;
   person.scale.set(s,s,s);
-  person.position.set(0, (-0.156*s)+2, -10);
+  person.position.set(0, (-0.156*s)+2, 25); // z=25, visible in the clearing
   person.traverse(child=>{
     if(!child.isMesh) return;
     child.material=child.material.clone();
