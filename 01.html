@@ -311,8 +311,8 @@ loadGLB("church.glb", gltf => {
   // Scale up significantly so it reads at the end of the corridor
   const s = 7;
   church.scale.set(s, s, s);
-  church.position.set(0, 0, 5);
-  church.rotation.y = Math.PI;
+  church.position.set(0, -2, 5);
+  church.rotation.y = Math.PI / 2;
   church.traverse(child => {
     if (!child.isMesh) return;
     child.material = child.material.clone();
