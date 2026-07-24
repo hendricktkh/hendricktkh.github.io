@@ -85,9 +85,9 @@ renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.setClearColor(0,0);
 const scene=new THREE.Scene();
 
-const camera=new THREE.PerspectiveCamera(42, W/H, 0.1, 600);
-camera.position.set(0, 8, 55);
-camera.lookAt(0, 4, 0);
+const camera=new THREE.PerspectiveCamera(55, W/H, 0.1, 600);
+camera.position.set(0, 3, 50);
+camera.lookAt(0, 3, 0);
 
 window.addEventListener('resize',()=>{
   W=window.innerWidth; H=window.innerHeight;
@@ -237,15 +237,22 @@ function updateWind(t){
 
 // ── TREE PLACEMENT ───────────────────────────────────────────
 function placeTrees(tmpl){
+  // Hallway: two rows of trees, left and right, converging toward church
+  // Camera at Z=50, church at Z=5. Trees from Z=45 (near) to Z=10 (far)
+  // X spacing narrows with depth to give perspective corridor feel
   const trees=[
-    {x:-6,  z: 10, sx:0.22, sy:0.22, ry:0.9,  ph:3.1, dk:0.72},
-    {x: 6,  z: 10, sx:0.20, sy:0.20, ry:-1.1, ph:1.4, dk:0.72},
-    {x:-18, z: 20, sx:0.26, sy:0.26, ry:0.5,  ph:2.2, dk:0.80},
-    {x: 18, z: 20, sx:0.24, sy:0.24, ry:-0.7, ph:0.8, dk:0.80},
-    {x:-32, z: 32, sx:0.32, sy:0.32, ry:0.2,  ph:1.8, dk:0.87},
-    {x: 32, z: 32, sx:0.30, sy:0.30, ry:-0.3, ph:2.7, dk:0.87},
-    {x:-46, z: 42, sx:0.38, sy:0.38, ry:0.1,  ph:0.4, dk:0.94},
-    {x: 46, z: 42, sx:0.36, sy:0.36, ry:-0.15,ph:3.5, dk:0.94},
+    // Near pair — widest, biggest
+    {x:-14, z:44, sx:0.50, sy:0.50, ry: 0.1, ph:0.4, dk:0.95},
+    {x: 14, z:44, sx:0.50, sy:0.50, ry:-0.1, ph:3.5, dk:0.95},
+    // Second pair
+    {x:-12, z:36, sx:0.42, sy:0.42, ry: 0.2, ph:1.8, dk:0.88},
+    {x: 12, z:36, sx:0.42, sy:0.42, ry:-0.2, ph:2.7, dk:0.88},
+    // Third pair
+    {x:-10, z:27, sx:0.34, sy:0.34, ry: 0.3, ph:2.2, dk:0.82},
+    {x: 10, z:27, sx:0.34, sy:0.34, ry:-0.3, ph:0.8, dk:0.82},
+    // Far pair — narrowest, smallest (perspective)
+    {x: -8, z:18, sx:0.26, sy:0.26, ry: 0.5, ph:3.1, dk:0.75},
+    {x:  8, z:18, sx:0.26, sy:0.26, ry:-0.5, ph:1.4, dk:0.75},
   ];
   trees.forEach(p=>{
     const clone=tmpl.clone(true);
@@ -285,9 +292,9 @@ loadGLB("tree.glb", gltf => {
 
 loadGLB("church.glb", gltf => {
   const church = gltf.scene;
-  const s = 4;
+  const s = 5;
   church.scale.set(s, s, s);
-  church.position.set(0, (1.0*s)-0.5, 5);
+  church.position.set(0, (1.0*s)-0.5, 8);
   church.traverse(child => {
     if (!child.isMesh) return;
     child.material = child.material.clone();
