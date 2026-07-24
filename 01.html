@@ -270,31 +270,33 @@ function placeTrees(tmpl){
 }
 
 const loader=new THREE.GLTFLoader();
-loader.load('tree.glb',gltf=>{
+
+function loadGLB(url, onSuccess, onError) {
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error("HTTP "+r.status); return r.arrayBuffer(); })
+    .then(buf => loader.parse(buf, "", onSuccess, onError))
+    .catch(onError);
+}
+
+loadGLB("tree.glb", gltf => {
   placeTrees(gltf.scene);
   onAssetLoaded();
-},null,err=>{ console.error('tree.glb failed:',err); onAssetLoaded(); });
+}, err => { console.error("tree.glb failed:", err); onAssetLoaded(); });
 
-// ── CHURCH ───────────────────────────────────────────────────
-// Model: Y -1.0 to +1.97, height ~3 units, width ~3 units
-// Scale 5 → ~15 units tall
-// Y: lift by 1.0*s to bring base to ground, sink 0.3 to bury base edge
-// Z: 25 — sits in the far clearing, visible between trees
-const churchLoader=new THREE.GLTFLoader();
-churchLoader.load('church.glb',gltf=>{
-  const church=gltf.scene;
-  const s=8;
-  church.scale.set(s,s,s);
+loadGLB("church.glb", gltf => {
+  const church = gltf.scene;
+  const s = 8;
+  church.scale.set(s, s, s);
   church.position.set(0, (1.0*s)-0.5, 30);
-  church.traverse(child=>{
-    if(!child.isMesh) return;
-    child.material=child.material.clone();
-    child.material.emissive=new THREE.Color(0x1a0030);
-    child.material.emissiveIntensity=0.3;
+  church.traverse(child => {
+    if (!child.isMesh) return;
+    child.material = child.material.clone();
+    child.material.emissive = new THREE.Color(0x1a0030);
+    child.material.emissiveIntensity = 0.3;
   });
   scene.add(church);
   onAssetLoaded();
-},null,err=>{ console.error('church.glb failed:',err); onAssetLoaded(); });
+}, err => { console.error("church.glb failed:", err); onAssetLoaded(); });
 
 function fadeIn(){
   setTimeout(()=>{
