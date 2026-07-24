@@ -117,7 +117,7 @@ function tickWind(dt){
 // ── BG CANVAS ────────────────────────────────────────────────
 function drawBG(t){
   bgCtx.clearRect(0,0,W,H);
-  const horizonY = H*0.52;
+  const horizonY = H*0.48;
 
   const sky=bgCtx.createLinearGradient(0,0,0,horizonY);
   sky.addColorStop(0,   '#3d1fa8');
@@ -238,14 +238,14 @@ function updateWind(t){
 // ── TREE PLACEMENT ───────────────────────────────────────────
 function placeTrees(tmpl){
   const trees=[
-    {x:-12, z: 22, sx:0.35, sy:0.35, ry:0.9,  ph:3.1, dk:0.75},
-    {x: 12, z: 22, sx:0.32, sy:0.32, ry:-1.1, ph:1.4, dk:0.75},
-    {x:-26, z: 36, sx:0.40, sy:0.40, ry:0.5,  ph:2.2, dk:0.82},
-    {x: 26, z: 36, sx:0.38, sy:0.38, ry:-0.7, ph:0.8, dk:0.82},
-    {x:-40, z: 47, sx:0.48, sy:0.48, ry:0.2,  ph:1.8, dk:0.88},
-    {x: 40, z: 47, sx:0.45, sy:0.45, ry:-0.3, ph:2.7, dk:0.88},
-    {x:-58, z: 53, sx:0.55, sy:0.55, ry:0.1,  ph:0.4, dk:0.95},
-    {x: 58, z: 53, sx:0.52, sy:0.52, ry:-0.15,ph:3.5, dk:0.95},
+    {x:-8,  z: 15, sx:0.40, sy:0.40, ry:0.9,  ph:3.1, dk:0.75},
+    {x: 8,  z: 15, sx:0.38, sy:0.38, ry:-1.1, ph:1.4, dk:0.75},
+    {x:-20, z: 25, sx:0.45, sy:0.45, ry:0.5,  ph:2.2, dk:0.82},
+    {x: 20, z: 25, sx:0.43, sy:0.43, ry:-0.7, ph:0.8, dk:0.82},
+    {x:-34, z: 36, sx:0.52, sy:0.52, ry:0.2,  ph:1.8, dk:0.88},
+    {x: 34, z: 36, sx:0.50, sy:0.50, ry:-0.3, ph:2.7, dk:0.88},
+    {x:-48, z: 45, sx:0.60, sy:0.60, ry:0.1,  ph:0.4, dk:0.95},
+    {x: 48, z: 45, sx:0.58, sy:0.58, ry:-0.15,ph:3.5, dk:0.95},
   ];
   trees.forEach(p=>{
     const clone=tmpl.clone(true);
@@ -287,7 +287,7 @@ loadGLB("church.glb", gltf => {
   const church = gltf.scene;
   const s = 8;
   church.scale.set(s, s, s);
-  church.position.set(0, (1.0*s)-0.5, 30);
+  church.position.set(0, (1.0*s)-0.5, 20);
   church.traverse(child => {
     if (!child.isMesh) return;
     child.material = child.material.clone();
