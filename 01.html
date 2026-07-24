@@ -86,8 +86,8 @@ renderer.setClearColor(0,0);
 const scene=new THREE.Scene();
 
 const camera=new THREE.PerspectiveCamera(42, W/H, 0.1, 600);
-camera.position.set(0, 3, 55);
-camera.lookAt(0, 8, 0);
+camera.position.set(0, 4, 55);
+camera.lookAt(0, 6, 0);
 
 window.addEventListener('resize',()=>{
   W=window.innerWidth; H=window.innerHeight;
@@ -238,14 +238,14 @@ function updateWind(t){
 // ── TREE PLACEMENT ───────────────────────────────────────────
 function placeTrees(tmpl){
   const trees=[
-    {x:-10, z: 20, sx:0.18, sy:0.18, ry:0.9,  ph:3.1, dk:0.7},
-    {x: 10, z: 20, sx:0.16, sy:0.16, ry:-1.1, ph:1.4, dk:0.7},
-    {x:-22, z: 35, sx:0.20, sy:0.20, ry:0.5,  ph:2.2, dk:0.78},
-    {x: 22, z: 35, sx:0.18, sy:0.18, ry:-0.7, ph:0.8, dk:0.78},
-    {x:-35, z: 46, sx:0.24, sy:0.24, ry:0.2,  ph:1.8, dk:0.85},
-    {x: 35, z: 46, sx:0.22, sy:0.22, ry:-0.3, ph:2.7, dk:0.85},
-    {x:-50, z: 52, sx:0.28, sy:0.28, ry:0.1,  ph:0.4, dk:0.92},
-    {x: 50, z: 52, sx:0.26, sy:0.26, ry:-0.15,ph:3.5, dk:0.92},
+    {x:-12, z: 22, sx:0.35, sy:0.35, ry:0.9,  ph:3.1, dk:0.75},
+    {x: 12, z: 22, sx:0.32, sy:0.32, ry:-1.1, ph:1.4, dk:0.75},
+    {x:-26, z: 36, sx:0.40, sy:0.40, ry:0.5,  ph:2.2, dk:0.82},
+    {x: 26, z: 36, sx:0.38, sy:0.38, ry:-0.7, ph:0.8, dk:0.82},
+    {x:-40, z: 47, sx:0.48, sy:0.48, ry:0.2,  ph:1.8, dk:0.88},
+    {x: 40, z: 47, sx:0.45, sy:0.45, ry:-0.3, ph:2.7, dk:0.88},
+    {x:-58, z: 53, sx:0.55, sy:0.55, ry:0.1,  ph:0.4, dk:0.95},
+    {x: 58, z: 53, sx:0.52, sy:0.52, ry:-0.15,ph:3.5, dk:0.95},
   ];
   trees.forEach(p=>{
     const clone=tmpl.clone(true);
@@ -283,9 +283,9 @@ loader.load('tree.glb',gltf=>{
 const churchLoader=new THREE.GLTFLoader();
 churchLoader.load('church.glb',gltf=>{
   const church=gltf.scene;
-  const s=5;
+  const s=8;
   church.scale.set(s,s,s);
-  church.position.set(0, (1.0*s)-0.3, 25);
+  church.position.set(0, (1.0*s)-0.5, 30);
   church.traverse(child=>{
     if(!child.isMesh) return;
     child.material=child.material.clone();
