@@ -85,9 +85,10 @@ renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.setClearColor(0,0);
 const scene=new THREE.Scene();
 
-const camera=new THREE.PerspectiveCamera(55, W/H, 0.1, 600);
-camera.position.set(0, 3, 50);
-camera.lookAt(0, 3, 0);
+// Camera pulled back and elevated — looking down the full corridor
+const camera=new THREE.PerspectiveCamera(52, W/H, 0.1, 600);
+camera.position.set(0, 12, 82);
+camera.lookAt(0, 4, 0);
 
 window.addEventListener('resize',()=>{
   W=window.innerWidth; H=window.innerHeight;
@@ -96,9 +97,9 @@ window.addEventListener('resize',()=>{
   renderer.setSize(W,H);
 });
 
-// ── LOADING GATE — wait for both trees + church ──────────────
+// ── LOADING GATE ─────────────────────────────────────────────
 let loadedCount = 0;
-const TOTAL_LOADS = 2; // trees + church
+const TOTAL_LOADS = 2;
 function onAssetLoaded() {
   loadedCount++;
   if (loadedCount >= TOTAL_LOADS) fadeIn();
@@ -212,6 +213,11 @@ rim.position.set(2,14,-30); scene.add(rim);
 const fill=new THREE.DirectionalLight(0x9966ee,0.5);
 fill.position.set(-3,6,55); scene.add(fill);
 
+// Soft point light at the church end — makes it glow and be visible
+const churchGlow=new THREE.PointLight(0xffc2e2, 2.5, 60);
+churchGlow.position.set(0, 10, 5);
+scene.add(churchGlow);
+
 // ── WIND SHADER ──────────────────────────────────────────────
 const WIND_GLSL=`
   float wp=uT*1.05+position.x*0.25+uPh;
@@ -236,24 +242,30 @@ function updateWind(t){
 }
 
 // ── TREE PLACEMENT ───────────────────────────────────────────
+// 6 pairs = 12 trees, from Z=72 (near camera) down to Z=12 (near church)
+// X spacing tapers naturally with distance to create converging hallway
 function placeTrees(tmpl){
-  // Hallway: two rows of trees, left and right, converging toward church
-  // Camera at Z=50, church at Z=5. Trees from Z=45 (near) to Z=10 (far)
-  // X spacing narrows with depth to give perspective corridor feel
   const trees=[
-    // Near pair — widest, biggest
-    {x:-14, z:44, sx:0.50, sy:0.50, ry: 0.1, ph:0.4, dk:0.95},
-    {x: 14, z:44, sx:0.50, sy:0.50, ry:-0.1, ph:3.5, dk:0.95},
-    // Second pair
-    {x:-12, z:36, sx:0.42, sy:0.42, ry: 0.2, ph:1.8, dk:0.88},
-    {x: 12, z:36, sx:0.42, sy:0.42, ry:-0.2, ph:2.7, dk:0.88},
-    // Third pair
-    {x:-10, z:27, sx:0.34, sy:0.34, ry: 0.3, ph:2.2, dk:0.82},
-    {x: 10, z:27, sx:0.34, sy:0.34, ry:-0.3, ph:0.8, dk:0.82},
-    // Far pair — narrowest, smallest (perspective)
-    {x: -8, z:18, sx:0.26, sy:0.26, ry: 0.5, ph:3.1, dk:0.75},
-    {x:  8, z:18, sx:0.26, sy:0.26, ry:-0.5, ph:1.4, dk:0.75},
+    // Pair 1 — very near, widest
+    {x:-18, z:72, sx:0.62, sy:0.62, ry: 0.05, ph:0.2, dk:1.0},
+    {x: 18, z:72, sx:0.62, sy:0.62, ry:-0.05, ph:3.2, dk:1.0},
+    // Pair 2
+    {x:-16, z:60, sx:0.54, sy:0.54, ry: 0.15, ph:1.1, dk:0.95},
+    {x: 16, z:60, sx:0.54, sy:0.54, ry:-0.15, ph:4.1, dk:0.95},
+    // Pair 3
+    {x:-14, z:48, sx:0.46, sy:0.46, ry: 0.2,  ph:2.4, dk:0.90},
+    {x: 14, z:48, sx:0.46, sy:0.46, ry:-0.2,  ph:5.0, dk:0.90},
+    // Pair 4
+    {x:-11, z:36, sx:0.38, sy:0.38, ry: 0.3,  ph:0.8, dk:0.84},
+    {x: 11, z:36, sx:0.38, sy:0.38, ry:-0.3,  ph:3.7, dk:0.84},
+    // Pair 5
+    {x: -9, z:24, sx:0.30, sy:0.30, ry: 0.4,  ph:1.9, dk:0.77},
+    {x:  9, z:24, sx:0.30, sy:0.30, ry:-0.4,  ph:2.6, dk:0.77},
+    // Pair 6 — far, narrowest
+    {x: -7, z:14, sx:0.22, sy:0.22, ry: 0.6,  ph:3.3, dk:0.70},
+    {x:  7, z:14, sx:0.22, sy:0.22, ry:-0.6,  ph:0.5, dk:0.70},
   ];
+
   trees.forEach(p=>{
     const clone=tmpl.clone(true);
     clone.scale.set(p.sx,p.sy,p.sx);
@@ -265,7 +277,7 @@ function placeTrees(tmpl){
       child.material=child.material.clone();
       const c=child.material.color||new THREE.Color(1,1,1);
       child.material.color=c.clone().multiplyScalar(p.dk);
-      if(child.material.alphaMap||child.material.name==='leaves'){
+      if(child.material.alphaMap||child.material.name==='leaves'||child.material.transparent){
         child.material.alphaTest=0.45;
         child.material.transparent=true;
         child.material.side=THREE.DoubleSide;
@@ -292,18 +304,22 @@ loadGLB("tree.glb", gltf => {
 
 loadGLB("church.glb", gltf => {
   const church = gltf.scene;
-  const s = 5;
+  // Scale up significantly so it reads at the end of the corridor
+  const s = 7;
   church.scale.set(s, s, s);
-  church.position.set(0, (1.0*s)-0.5, 8);
+  church.position.set(0, 0, 5);
   church.traverse(child => {
     if (!child.isMesh) return;
     child.material = child.material.clone();
-    child.material.emissive = new THREE.Color(0x1a0030);
-    child.material.emissiveIntensity = 0.3;
+    child.material.emissive = new THREE.Color(0x2a0040);
+    child.material.emissiveIntensity = 0.4;
   });
   scene.add(church);
   onAssetLoaded();
-}, err => { console.error("church.glb failed:", err); onAssetLoaded(); });
+}, err => {
+  console.error("church.glb failed:", err);
+  onAssetLoaded();
+});
 
 function fadeIn(){
   setTimeout(()=>{
