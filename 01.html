@@ -77,7 +77,6 @@ const bgCanvas=document.getElementById('bg-canvas');
 const bgCtx=bgCanvas.getContext('2d');
 bgCanvas.width=W; bgCanvas.height=H;
 
-// Three setup first so resize can reference camera/renderer
 const threeCanvas=document.getElementById('three-canvas');
 const renderer=new THREE.WebGLRenderer({canvas:threeCanvas,alpha:true,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -86,7 +85,6 @@ renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.setClearColor(0,0);
 const scene=new THREE.Scene();
 
-// Camera far back, narrow FOV so trees look right-sized and distant
 const camera=new THREE.PerspectiveCamera(42, W/H, 0.1, 600);
 camera.position.set(0, 3, 55);
 camera.lookAt(0, 8, 0);
@@ -98,7 +96,15 @@ window.addEventListener('resize',()=>{
   renderer.setSize(W,H);
 });
 
-// ── WIND ────────────────────────────────────────────────────
+// ── LOADING GATE — wait for both trees + church ──────────────
+let loadedCount = 0;
+const TOTAL_LOADS = 2; // trees + church
+function onAssetLoaded() {
+  loadedCount++;
+  if (loadedCount >= TOTAL_LOADS) fadeIn();
+}
+
+// ── WIND ─────────────────────────────────────────────────────
 let windTime=0,windStrength=0,windTarget=0,windGust=0;
 function tickWind(dt){
   windTime+=dt*0.35;
@@ -108,23 +114,21 @@ function tickWind(dt){
   windGust*=0.975;
 }
 
-// ── BG CANVAS ───────────────────────────────────────────────
+// ── BG CANVAS ────────────────────────────────────────────────
 function drawBG(t){
   bgCtx.clearRect(0,0,W,H);
-
-  // Sky — majorelle → periwinkle → blush → cotton candy → coral
   const horizonY = H*0.52;
+
   const sky=bgCtx.createLinearGradient(0,0,0,horizonY);
-  sky.addColorStop(0,   '#3d1fa8'); // deeper majorelle at top
-  sky.addColorStop(0.28,'#6e44ff'); // majorelle-blue
-  sky.addColorStop(0.55,'#b892ff'); // soft-periwinkle
-  sky.addColorStop(0.78,'#ffc2e2'); // blush-pop
-  sky.addColorStop(0.92,'#ff90b3'); // cotton-candy
-  sky.addColorStop(1,   '#ef7a85'); // light-coral at horizon
+  sky.addColorStop(0,   '#3d1fa8');
+  sky.addColorStop(0.28,'#6e44ff');
+  sky.addColorStop(0.55,'#b892ff');
+  sky.addColorStop(0.78,'#ffc2e2');
+  sky.addColorStop(0.92,'#ff90b3');
+  sky.addColorStop(1,   '#ef7a85');
   bgCtx.fillStyle=sky;
   bgCtx.fillRect(0,0,W,horizonY);
 
-  // Soft horizon glow bloom
   const hg=bgCtx.createRadialGradient(W/2,horizonY,0,W/2,horizonY,W*0.6);
   hg.addColorStop(0,  'rgba(255,180,210,0.38)');
   hg.addColorStop(0.5,'rgba(255,144,179,0.12)');
@@ -132,20 +136,18 @@ function drawBG(t){
   bgCtx.fillStyle=hg;
   bgCtx.fillRect(0,horizonY*0.6,W,horizonY*0.5);
 
-  // Ground — very dark at horizon, brightens toward camera
   const grass=bgCtx.createLinearGradient(0,horizonY,0,H);
-  grass.addColorStop(0,   '#100818'); // almost black-purple at horizon (matches sky base)
-  grass.addColorStop(0.08,'#001a0c'); // dark
-  grass.addColorStop(0.22,'#004b23'); // dark-spruce
-  grass.addColorStop(0.42,'#006400'); // green
-  grass.addColorStop(0.62,'#38b000'); // bright-fern
-  grass.addColorStop(0.82,'#70e000'); // radioactive-grass
-  grass.addColorStop(0.94,'#9ef01a'); // slime-lime
-  grass.addColorStop(1,   '#aadd11'); // toned chartreuse (not full neon)
+  grass.addColorStop(0,   '#100818');
+  grass.addColorStop(0.08,'#001a0c');
+  grass.addColorStop(0.22,'#004b23');
+  grass.addColorStop(0.42,'#006400');
+  grass.addColorStop(0.62,'#38b000');
+  grass.addColorStop(0.82,'#70e000');
+  grass.addColorStop(0.94,'#9ef01a');
+  grass.addColorStop(1,   '#aadd11');
   bgCtx.fillStyle=grass;
   bgCtx.fillRect(0,horizonY,W,H-horizonY);
 
-  // Wide soft blend at horizon — pulls sky coral into the ground dark
   const blend=bgCtx.createLinearGradient(0,horizonY-40,0,horizonY+40);
   blend.addColorStop(0,   'rgba(239,122,133,0)');
   blend.addColorStop(0.38,'rgba(239,122,133,0.22)');
@@ -155,10 +157,8 @@ function drawBG(t){
   bgCtx.fillStyle=blend;
   bgCtx.fillRect(0,horizonY-40,W,80);
 
-  // Grass blades
   drawGrass(t);
 
-  // Side vignettes — subtle, just enough to let trees emerge from darkness
   const vL=bgCtx.createLinearGradient(0,0,W*0.15,0);
   vL.addColorStop(0,'rgba(8,2,22,0.75)'); vL.addColorStop(1,'rgba(8,2,22,0)');
   bgCtx.fillStyle=vL; bgCtx.fillRect(0,0,W*0.15,H);
@@ -166,7 +166,6 @@ function drawBG(t){
   vR.addColorStop(0,'rgba(8,2,22,0.75)'); vR.addColorStop(1,'rgba(8,2,22,0)');
   bgCtx.fillStyle=vR; bgCtx.fillRect(W*0.85,0,W*0.15,H);
 
-  // Top vignette
   const vT=bgCtx.createLinearGradient(0,0,0,H*0.1);
   vT.addColorStop(0,'rgba(6,1,20,0.6)'); vT.addColorStop(1,'rgba(6,1,20,0)');
   bgCtx.fillStyle=vT; bgCtx.fillRect(0,0,W,H*0.1);
@@ -187,17 +186,15 @@ const blades=Array.from({length:BLADES},()=>({
 function drawGrass(t){
   const w=windStrength+windGust;
   blades.forEach(b=>{
-    const depth=(b.y-0.52)/0.48; // 0=far,1=near
+    const depth=(b.y-0.52)/0.48;
     const bx=b.x*W, by=b.y*H, bh=b.h*H;
-    // Near blades: chartreuse. Far blades: dark spruce.
     const gr=Math.round(depth*80);
     const gg=Math.round(75+depth*180);
-    const gb=0;
     const alpha=0.35+depth*0.55;
     const sway=(Math.sin(windTime*b.spd+b.ph)*w*0.5+b.lean)*bh*0.55;
     bgCtx.save();
     bgCtx.globalAlpha=alpha;
-    bgCtx.strokeStyle=`rgb(${gr},${gg},${gb})`;
+    bgCtx.strokeStyle=`rgb(${gr},${gg},0)`;
     bgCtx.lineWidth=b.w*(0.4+depth*0.9);
     bgCtx.lineCap='round';
     bgCtx.beginPath();
@@ -239,34 +236,14 @@ function updateWind(t){
 }
 
 // ── TREE PLACEMENT ───────────────────────────────────────────
-/*
-  Camera at Z=55, FOV=42°: half-width ≈ tan(21°)*55 ≈ 21.1
-  We want a CLEARING in the centre (middle ~40% of screen width).
-  Trees are on the sides — like standing in a glade looking out.
-
-  Layout (top-down view, camera at bottom):
-  far background:    [bg-L]         [bg-R]       z=-20
-  mid background:  [mid-L]   gap   [mid-R]       z=  5
-  foreground:    [fg-L]    clearing   [fg-R]      z= 22
-  near flankers: [nf-L]               [nf-R]      z= 38
-
-  dk = brightness multiplier. Higher = more visible.
-*/
 function placeTrees(tmpl){
-  const trees = [
-    // Far background
+  const trees=[
     {x:-10, z: 20, sx:0.18, sy:0.18, ry:0.9,  ph:3.1, dk:0.7},
     {x: 10, z: 20, sx:0.16, sy:0.16, ry:-1.1, ph:1.4, dk:0.7},
-  
-    // Mid background
     {x:-22, z: 35, sx:0.20, sy:0.20, ry:0.5,  ph:2.2, dk:0.78},
     {x: 22, z: 35, sx:0.18, sy:0.18, ry:-0.7, ph:0.8, dk:0.78},
-  
-    // Foreground
     {x:-35, z: 46, sx:0.24, sy:0.24, ry:0.2,  ph:1.8, dk:0.85},
     {x: 35, z: 46, sx:0.22, sy:0.22, ry:-0.3, ph:2.7, dk:0.85},
-  
-    // Near flankers
     {x:-50, z: 52, sx:0.28, sy:0.28, ry:0.1,  ph:0.4, dk:0.92},
     {x: 50, z: 52, sx:0.26, sy:0.26, ry:-0.15,ph:3.5, dk:0.92},
   ];
@@ -275,7 +252,7 @@ function placeTrees(tmpl){
     clone.scale.set(p.sx,p.sy,p.sx);
     clone.rotation.y=p.ry;
     clone.position.set(p.x,0,p.z);
-    const h = 32 * p.sy; 
+    const h=32*p.sy;
     clone.traverse(child=>{
       if(!child.isMesh) return;
       child.material=child.material.clone();
@@ -295,64 +272,65 @@ function placeTrees(tmpl){
 const loader=new THREE.GLTFLoader();
 loader.load('tree.glb',gltf=>{
   placeTrees(gltf.scene);
-  fadeIn();
-},null,err=>{console.error(err);fadeIn();});
+  onAssetLoaded();
+},null,err=>{ console.error('tree.glb failed:',err); onAssetLoaded(); });
 
 // ── CHURCH ───────────────────────────────────────────────────
-// Model bounds: Y -1.0 to +1.97, height ~3 units
-// Scale 6 → church is ~18 units tall, imposing in the clearing
-// Y: lift by (1.0 * scale) to sit on ground, sink 0.5 to bury base
-// Z: 15, visible in the clearing gap between trees
-const churchLoader = new THREE.GLTFLoader();
-churchLoader.load('church.glb', gltf => {
-  const church = gltf.scene;
-  const s = 6;
-  church.scale.set(s, s, s);
-  church.position.set(0, (1.0 * s) - 0.5, 15);
-  church.traverse(child => {
-    if (!child.isMesh) return;
-    child.material = child.material.clone();
-    child.material.emissive = new THREE.Color(0x1a0030);
-    child.material.emissiveIntensity = 0.3;
+// Model: Y -1.0 to +1.97, height ~3 units, width ~3 units
+// Scale 5 → ~15 units tall
+// Y: lift by 1.0*s to bring base to ground, sink 0.3 to bury base edge
+// Z: 25 — sits in the far clearing, visible between trees
+const churchLoader=new THREE.GLTFLoader();
+churchLoader.load('church.glb',gltf=>{
+  const church=gltf.scene;
+  const s=5;
+  church.scale.set(s,s,s);
+  church.position.set(0, (1.0*s)-0.3, 25);
+  church.traverse(child=>{
+    if(!child.isMesh) return;
+    child.material=child.material.clone();
+    child.material.emissive=new THREE.Color(0x1a0030);
+    child.material.emissiveIntensity=0.3;
   });
   scene.add(church);
-}, null, err => console.error('church.glb failed:', err));
+  onAssetLoaded();
+},null,err=>{ console.error('church.glb failed:',err); onAssetLoaded(); });
 
-// ── AUDIO — constant ambient wind ────────────────────────────
-// Default: muted. Click speaker to unmute.
+function fadeIn(){
+  setTimeout(()=>{
+    document.getElementById('loading').classList.add('fade');
+    setTimeout(()=>{ const l=document.getElementById('loading'); if(l) l.remove(); },1700);
+    document.getElementById('label').classList.add('visible');
+    document.getElementById('next').classList.add('visible');
+    document.getElementById('mute').classList.add('visible');
+  },500);
+}
+
+// ── AUDIO ─────────────────────────────────────────────────────
 let audioOn=false,isMuted=true,masterGain;
 
 async function initAudio(){
   if(audioOn)return; audioOn=true; await Tone.start();
-
-  // masterGain = mute switch only, starts at 0
   masterGain=new Tone.Gain(0).toDestination();
-
-  // subGain = level + LFO swell (never touches masterGain so mute always works)
   const subGain=new Tone.Gain(0.3).connect(masterGain);
   const lfo=new Tone.LFO({frequency:0.04,min:0.75,max:1.0,type:'sine'});
   lfo.connect(subGain.gain); lfo.start();
-
-  // Low rumble
   const brown=new Tone.Noise('brown');
   const lowpass=new Tone.Filter(180,'lowpass');
   const brownGain=new Tone.Gain(0.7).connect(subGain);
   brown.connect(lowpass); lowpass.connect(brownGain); brown.start();
-
-  // Mid whoosh
   const pink=new Tone.Noise('pink');
   const bandpass=new Tone.Filter({frequency:600,type:'bandpass',Q:0.6});
   const pinkGain=new Tone.Gain(0.45).connect(subGain);
   pink.connect(bandpass); bandpass.connect(pinkGain); pink.start();
 }
 
-// Icon starts in muted state
 document.getElementById('wave1').style.opacity='0.15';
 document.getElementById('wave2').style.opacity='0.15';
 
 document.getElementById('mute').addEventListener('click',async ()=>{
   isMuted=!isMuted;
-  if(!audioOn) await initAudio(); // start audio on first unmute
+  if(!audioOn) await initAudio();
   if(masterGain) masterGain.gain.rampTo(isMuted?0:1,0.6);
   document.getElementById('wave1').style.opacity=isMuted?'0.15':'1';
   document.getElementById('wave2').style.opacity=isMuted?'0.15':'1';
