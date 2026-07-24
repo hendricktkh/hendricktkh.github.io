@@ -315,14 +315,10 @@ loadGLB("church.glb", gltf => {
   church.rotation.y = -Math.PI / 2;
   church.traverse(child => {
     if (!child.isMesh) return;
-    // Hide any flat ground/base plane meshes (they have near-zero height bounding boxes)
     const box = new THREE.Box3().setFromObject(child);
     const size = new THREE.Vector3();
     box.getSize(size);
-    if (size.y < 0.5 && size.x > 2) {
-      child.visible = false;
-      return;
-    }
+    console.log('mesh:', child.name, '| size:', size.x.toFixed(2), size.y.toFixed(2), size.z.toFixed(2));
     child.material = child.material.clone();
     child.material.emissive = new THREE.Color(0x2a0040);
     child.material.emissiveIntensity = 0.4;
